@@ -1,7 +1,7 @@
 name: planeja_ai
 description: "A new Flutter project."
 publish_to: 'none'
-version: 0.1.0+1
+version: 1.0.0
 
 environment:
   sdk: ^3.11.1
@@ -9,6 +9,16 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  provider: ^6.1.2
+  go_router: ^17.1.0
+  fl_chart: ^1.1.1
+  flutter_animate: ^4.5.0
+  shared_preferences: ^2.2.3
+  intl: ^0.20.2
+  google_fonts: ^8.0.2
+  lucide_icons: ^0.257.0
 
 dev_dependencies:
   flutter_test:
