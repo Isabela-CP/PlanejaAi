@@ -65,30 +65,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       'Receita Total',
                       summaryData['totalIncome']!,
                       LucideIcons.trendingUp,
-                      const Color(0xFF10B981), // success (green)
+                      const Color(0xFF10B981),
                       '+12% do mês passado',
-                    ).animate().fade(delay: 100.ms).slideY(),
+                    ).animate().fade(duration: 400.ms, delay: 50.ms).slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut),
                     _buildSummaryCard(
                       'Gastos Totais',
                       summaryData['totalExpenses']!,
                       LucideIcons.trendingDown,
-                      const Color(0xFFEF4444), // destructive (red)
+                      const Color(0xFFEF4444),
                       '+5% do mês passado',
-                    ).animate().fade(delay: 200.ms).slideY(),
+                    ).animate().fade(duration: 400.ms, delay: 100.ms).slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut),
                     _buildSummaryCard(
                       'Saldo',
                       summaryData['balance']!,
                       LucideIcons.dollarSign,
-                      const Color(0xFF3B82F6), // primary
+                      const Color(0xFF3B82F6),
                       '+18% do mês passado',
-                    ).animate().fade(delay: 300.ms).slideY(),
+                    ).animate().fade(duration: 400.ms, delay: 150.ms).slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut),
                     _buildSummaryCard(
                       'Economia',
                       summaryData['savings']!,
                       LucideIcons.piggyBank,
-                      const Color(0xFFA855F7), // secondary
+                      const Color(0xFFA855F7),
                       '+8% do mês passado',
-                    ).animate().fade(delay: 400.ms).slideY(),
+                    ).animate().fade(duration: 400.ms, delay: 200.ms).slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut),
                   ],
                 );
               },
@@ -116,10 +116,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ],
                       );
               },
-            ).animate().fade(delay: 500.ms),
+            ).animate().fade(duration: 400.ms, delay: 250.ms).slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut),
 
             const SizedBox(height: 24),
-            _buildLineChartCard().animate().fade(delay: 600.ms),
+            _buildLineChartCard().animate().fade(duration: 400.ms, delay: 300.ms).slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut),
           ],
         ),
       ),

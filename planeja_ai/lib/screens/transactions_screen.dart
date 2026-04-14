@@ -252,7 +252,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     ],
                   ),
                 ),
-              ).animate().fade().slideY(),
+              ).animate().fade(duration: 300.ms).slideY(begin: -0.1, end: 0, duration: 300.ms, curve: Curves.easeOut),
               const SizedBox(height: 24),
             ],
 
@@ -338,13 +338,13 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                 color: color,
                               ),
                             ),
-                          );
+                          ).animate().fade(duration: 400.ms, delay: (50 * index).ms).slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut);
                         },
                       ),
                   ],
                 ),
               ),
-            ).animate().fade(delay: 200.ms).slideY(),
+            ),
           ],
         ),
       ),
