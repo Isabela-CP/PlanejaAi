@@ -96,10 +96,14 @@ class BudgetCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  '${currencyFormatter.format(budget.spent)} de ${currencyFormatter.format(budget.monthlyLimit)}',
-                  style: TextStyle(color: mutedColor, fontSize: 12),
+                Flexible(
+                  child: Text(
+                    '${currencyFormatter.format(budget.spent)} de ${currencyFormatter.format(budget.monthlyLimit)}',
+                    style: TextStyle(color: mutedColor, fontSize: 12),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
+                const SizedBox(width: 8),
                 Text(
                   '${budget.progressPercentage.toStringAsFixed(0)}%',
                   style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),

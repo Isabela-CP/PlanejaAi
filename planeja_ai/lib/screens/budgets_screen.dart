@@ -61,28 +61,32 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Orçamentos'),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: ElevatedButton.icon(
-              icon: Icon(_showForm ? Icons.close : Icons.add, size: 18),
-              label: Text(_showForm ? 'Fechar' : 'Criar Orçamento'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-              ),
-              onPressed: _toggleForm,
-            ),
-          ),
-        ],
-      ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(24.0),
         child: Column(
           children: [
-            // Condicional de Formulario
-            if (_showForm) 
+            // Header estilo Painel/Transações
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Orçamentos',
+                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                ).animate().fade(duration: 300.ms).slideX(begin: -0.1, end: 0, duration: 300.ms, curve: Curves.easeOut),
+                ElevatedButton.icon(
+                  onPressed: _toggleForm,
+                  icon: Icon(_showForm ? Icons.close : Icons.add, size: 16),
+                  label: Text(_showForm ? 'Fechar' : 'Adicionar'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                  ),
+                ).animate().fade().scale(),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            if (_showForm)
               BudgetForm(
                 currentBudgets: _budgets,
                 onAddBudget: _handleAddBudget,
@@ -91,7 +95,6 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
                .fade(duration: 300.ms)
                .slideY(begin: -0.1, end: 0, duration: 300.ms, curve: Curves.easeOut),
 
-            // Lista Restante
             Expanded(
               child: _budgets.isEmpty
                   ? Center(
@@ -99,13 +102,13 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            Icons.savings_outlined, 
-                            size: 64, 
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4)
+                            Icons.account_balance_wallet_outlined,
+                            size: 64,
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            'Nenhum orçamento criado ainda.\nCrie seu primeiro orçamento para começar a acompanhar seus gastos!',
+                            'Nenhum orçamento configurado ainda.\nCrie um para começar a planejar!',
                             textAlign: TextAlign.center,
                             style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                           ),
@@ -114,21 +117,23 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
                     )
                   : LayoutBuilder(
                       builder: (context, constraints) {
-                        int crossAxisCount = constraints.maxWidth > 600 ? 2 : 1;
+                        bool useTwoColumns = constraints.maxWidth >= 600;
                         
                         return GridView.builder(
                           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: crossAxisCount,
+                            crossAxisCount: useTwoColumns ? 2 : 1,
                             crossAxisSpacing: 16,
                             mainAxisSpacing: 16,
                             mainAxisExtent: 270, 
                           ),
                           itemCount: _budgets.length,
                           itemBuilder: (context, index) {
-                            return BudgetCard(budget: _budgets[index])
-                                .animate()
-                                .fade(duration: 400.ms, delay: (50 * index).ms)
-                                .slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut);
+                            return BudgetCard(
+                              budget: _budgets[index],
+                            )
+                            .animate()
+                            .fade(duration: 400.ms, delay: (50 * index).ms)
+                            .slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut);
                           },
                         );
                       },
