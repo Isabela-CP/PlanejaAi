@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:window_manager/window_manager.dart';
 
 import 'core/theme.dart';
@@ -10,19 +11,21 @@ import 'providers/finance_provider.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await windowManager.ensureInitialized();
+  if (!kIsWeb) {
+    await windowManager.ensureInitialized();
 
-  WindowOptions windowOptions = const WindowOptions(
-    minimumSize: Size(600, 700),
-    size: Size(1280, 720),     
-    center: true,        
-    title: 'Planeja Aí',
-  );
-  
-  windowManager.waitUntilReadyToShow(windowOptions, () async {
-    await windowManager.show();
-    await windowManager.focus();
-  });
+    WindowOptions windowOptions = const WindowOptions(
+      minimumSize: Size(600, 700),
+      size: Size(1280, 720),     
+      center: true,        
+      title: 'Planeja Aí',
+    );
+    
+    windowManager.waitUntilReadyToShow(windowOptions, () async {
+      await windowManager.show();
+      await windowManager.focus();
+    });
+  }
 
   runApp(
     MultiProvider(
