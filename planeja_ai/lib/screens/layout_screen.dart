@@ -107,7 +107,12 @@ class LayoutScreen extends StatelessWidget {
             Expanded(
               child: Container(
                 color: Theme.of(context).scaffoldBackgroundColor,
-                child: child,
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1200),
+                    child: child,
+                  ),
+                ),
               ),
             ),
           ],
@@ -115,7 +120,12 @@ class LayoutScreen extends StatelessWidget {
       );
     } else {
       return Scaffold(
-        body: child,
+        body: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1200),
+            child: child,
+          ),
+        ),
         bottomNavigationBar: NavigationBar(
           selectedIndex: currentIndex,
           onDestinationSelected: (index) => _onItemTapped(index, context),

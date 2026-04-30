@@ -33,9 +33,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       await context.read<AuthProvider>().login(
-            _emailController.text,
-            _passwordController.text,
-          );
+        _emailController.text,
+        _passwordController.text,
+      );
       if (mounted) context.go('/dashboard');
     } catch (e) {
       if (mounted) {
@@ -63,103 +63,116 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
-            child: Card(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              child: Padding(
-                padding: const EdgeInsets.all(32.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Logo(size: 48, showText: false).animate().fade().scale(),
-                    const SizedBox(height: 24),
-                    Text(
-                      'Bem-vindo ao Planeja.AI',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                      textAlign: TextAlign.center,
-                    ).animate().fade(delay: 100.ms).slideY(),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Entre na sua conta',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.secondary,
-                          ),
-                    ).animate().fade(delay: 200.ms),
-                    const SizedBox(height: 32),
-                    if (_error != null)
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.error.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: Theme.of(context).colorScheme.error.withOpacity(0.5),
-                          ),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 600),
+              child: Card(
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                child: Padding(
+                  padding: const EdgeInsets.all(32.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Logo(
+                        size: 48,
+                        showText: false,
+                      ).animate().fade().scale(),
+                      const SizedBox(height: 24),
+                      Text(
+                        'Bem-vindo ao Planeja.AI',
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
+                      ).animate().fade(delay: 100.ms).slideY(),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Entre na sua conta',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.secondary,
                         ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.error_outline,
-                                color: Theme.of(context).colorScheme.error),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                _error!,
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.error,
+                      ).animate().fade(delay: 200.ms),
+                      const SizedBox(height: 32),
+                      if (_error != null)
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          margin: const EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.error.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.error.withOpacity(0.5),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                color: Theme.of(context).colorScheme.error,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _error!,
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ).animate().fadeIn(),
-                    TextField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(
-                        labelText: 'Email',
-                        hintText: 'Digite seu email',
-                        prefixIcon: Icon(LucideIcons.mail, size: 20),
-                      ),
-                    ).animate().fade(delay: 300.ms).slideX(),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: _passwordController,
-                      obscureText: !_showPassword,
-                      decoration: InputDecoration(
-                        labelText: 'Senha',
-                        hintText: 'Digite sua senha',
-                        prefixIcon: const Icon(LucideIcons.lock, size: 20),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _showPassword ? LucideIcons.eyeOff : LucideIcons.eye,
-                            size: 20,
+                            ],
                           ),
-                          onPressed: () {
-                            setState(() => _showPassword = !_showPassword);
-                          },
+                        ).animate().fadeIn(),
+                      TextField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: const InputDecoration(
+                          labelText: 'Email',
+                          hintText: 'Digite seu email',
+                          prefixIcon: Icon(LucideIcons.mail, size: 20),
                         ),
-                      ),
-                    ).animate().fade(delay: 400.ms).slideX(),
-                    const SizedBox(height: 32),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _handleLogin,
-                        child: _isLoading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Text('Entrar'),
-                      ),
-                    ).animate().fade(delay: 500.ms).scale(),
-                  ],
+                      ).animate().fade(delay: 300.ms).slideX(),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _passwordController,
+                        obscureText: !_showPassword,
+                        decoration: InputDecoration(
+                          labelText: 'Senha',
+                          hintText: 'Digite sua senha',
+                          prefixIcon: const Icon(LucideIcons.lock, size: 20),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _showPassword
+                                  ? LucideIcons.eyeOff
+                                  : LucideIcons.eye,
+                              size: 20,
+                            ),
+                            onPressed: () {
+                              setState(() => _showPassword = !_showPassword);
+                            },
+                          ),
+                        ),
+                      ).animate().fade(delay: 400.ms).slideX(),
+                      const SizedBox(height: 32),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _isLoading ? null : _handleLogin,
+                          child: _isLoading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text('Entrar'),
+                        ),
+                      ).animate().fade(delay: 500.ms).scale(),
+                    ],
+                  ),
                 ),
               ),
             ),
