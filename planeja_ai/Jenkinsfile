@@ -20,17 +20,21 @@ pipeline {
 
         stage('🔧 Setup') {
             steps {
-                echo 'Configurando ambiente Flutter...'
-                sh 'flutter --version'
-                sh 'flutter config --no-analytics'
-                sh 'flutter pub get'
+                dir('planeja_ai') {
+                    echo 'Configurando ambiente Flutter...'
+                    sh 'flutter --version'
+                    sh 'flutter config --no-analytics'
+                    sh 'flutter pub get'
+                }
             }
         }
 
         stage('Analyze (Lint)') {
             steps {
-                echo 'Executando análise estática do código...'
-                sh 'flutter analyze --no-pub'
+                dir('planeja_ai') {
+                    echo 'Executando análise estática do código...'
+                    sh 'flutter analyze --no-pub'
+                }
             }
             post {
                 failure {
@@ -41,18 +45,20 @@ pipeline {
 
         stage('Testes Unitários e de Widget') {
             steps {
-                echo 'Executando testes...'
-                sh '''
-                    flutter test \
-                      --no-pub \
-                      --reporter expanded \
-                      --coverage
-                '''
+                dir('planeja_ai') {
+                    echo 'Executando testes...'
+                    sh '''
+                        flutter test \
+                          --no-pub \
+                          --reporter expanded \
+                          --coverage
+                    '''
+                }
             }
             post {
                 always {
                     publishCoverage(
-                        adapters: [coberturaAdapter('coverage/lcov.info')],
+                        adapters: [coberturaAdapter('planeja_ai/coverage/lcov.info')],
                         sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
                     )
                 }
@@ -62,13 +68,15 @@ pipeline {
         stage('Build Android (APK)') {
             //todas as branches
             steps {
-                echo 'Gerando APK de release...'
-                sh 'flutter build apk --release --no-pub'
+                dir('planeja_ai') {
+                    echo 'Gerando APK de release...'
+                    sh 'flutter build apk --release --no-pub'
+                }
             }
             post {
                 success {
                     archiveArtifacts(
-                        artifacts: 'build/app/outputs/flutter-apk/*.apk',
+                        artifacts: 'planeja_ai/build/app/outputs/flutter-apk/*.apk',
                         fingerprint: true
                     )
                 }
@@ -78,13 +86,15 @@ pipeline {
         stage('Build Web') {
             //todas as branches
             steps {
-                echo 'Gerando build Web...'
-                sh 'flutter build web --release --no-pub'
+                dir('planeja_ai') {
+                    echo 'Gerando build Web...'
+                    sh 'flutter build web --release --no-pub'
+                }
             }
             post {
                 success {
                     archiveArtifacts(
-                        artifacts: 'build/web/**',
+                        artifacts: 'planeja_ai/build/web/**',
                         fingerprint: true
                     )
                 }
