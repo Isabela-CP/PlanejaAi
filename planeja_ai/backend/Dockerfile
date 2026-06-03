@@ -14,20 +14,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Create a non-root user and group
+# Create a non-root user and group (system user, no shell, no home directory)
 RUN groupadd -r appuser && useradd -r -g appuser appuser
 
-# Set work directory
-WORKDIR /app
-
 # Install python dependencies
-COPY --chown=appuser:appuser requirements.txt /app/
-RUN chmod 444 /app/requirements.txt && \
-    pip install --no-cache-dir -r requirements.txt
+COPY --chown=root:root --chmod=444 requirements.txt /app/
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy only the files strictly required to run the application (avoiding wildcard COPY)
-COPY --chown=appuser:appuser main.py /app/
-RUN chmod 444 /app/main.py
+# Copy only the files strictly required to run the application (no wildcard COPY)
+COPY --chown=root:root --chmod=444 main.py /app/
 
 # Switch to the non-root user
 USER appuser
