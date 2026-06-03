@@ -14,12 +14,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# Create a non-root user and group
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
+# Set work directory
+WORKDIR /app
+
 # Install python dependencies
-COPY requirements.txt /app/
+COPY --chown=appuser:appuser requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy project files
-COPY . /app/
+# Copy only the files strictly required to run the application (avoiding wildcard COPY)
+COPY --chown=appuser:appuser main.py /app/
+
+# Switch to the non-root user
+USER appuser
 
 # Expose port 8000 for FastAPI
 EXPOSE 8000

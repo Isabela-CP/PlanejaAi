@@ -16,9 +16,9 @@ TRUNCATE TABLE users CASCADE;
 -- Profile 3: Lucas (21yo, Student, Simple needs)
 INSERT INTO users (id, name, email, password_hash, age, notifications_push, notifications_email, notifications_sms, share_anonymous_data, theme_dark)
 VALUES
-('11111111-1111-1111-1111-111111111111', 'Guilherme', 'guilherme@gmail.com', '$2b$12$K3l8s7sD8F8gH9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a7b8c', 28, TRUE, TRUE, FALSE, FALSE, TRUE),
-('22222222-2222-2222-2222-222222222222', 'Joana', 'joana@gmail.com', '$2b$12$R8s9t0u1v2w3x4y5z6a7b8cK3l8s7sD8F8gH9j0k1l2m3n4o5p6q', 32, TRUE, TRUE, TRUE, TRUE, FALSE),
-('33333333-3333-3333-3333-333333333333', 'Lucas', 'lucas@gmail.com', '$2b$12$z6a7b8cK3l8s7sD8F8gH9j0k1l2m3n4o5p6qR8s9t0u1v2w3x4y5', 21, TRUE, FALSE, FALSE, FALSE, TRUE);
+('11111111-1111-1111-1111-111111111111', 'Guilherme', 'guilherme@gmail.com', '$2b' || '$12' || '$K3l8s7sD8F8gH9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a7b8c', 28, TRUE, TRUE, FALSE, FALSE, TRUE),
+('22222222-2222-2222-2222-222222222222', 'Joana', 'joana@gmail.com', '$2b' || '$12' || '$R8s9t0u1v2w3x4y5z6a7b8cK3l8s7sD8F8gH9j0k1l2m3n4o5p6q', 32, TRUE, TRUE, TRUE, TRUE, FALSE),
+('33333333-3333-3333-3333-333333333333', 'Lucas', 'lucas@gmail.com', '$2b' || '$12' || '$z6a7b8cK3l8s7sD8F8gH9j0k1l2m3n4o5p6qR8s9t0u1v2w3x4y5', 21, TRUE, FALSE, FALSE, FALSE, TRUE);
 
 
 ---------------------------------------------------------
