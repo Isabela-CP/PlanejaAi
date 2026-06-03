@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: planeja_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Automatically run schema and seed scripts on container startup
+      - ./database/01_esquema.sql:/docker-entrypoint-initdb.d/01_esquema.sql:ro
+      - ./database/02_dados.sql:/docker-entrypoint-initdb.d/02_dados.sql:ro
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: planeja_backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+
+volumes:
+  pgdata:
