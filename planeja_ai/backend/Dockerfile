@@ -22,10 +22,12 @@ WORKDIR /app
 
 # Install python dependencies
 COPY --chown=appuser:appuser requirements.txt /app/
-RUN pip install --no-cache-dir -r requirements.txt
+RUN chmod 444 /app/requirements.txt && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy only the files strictly required to run the application (avoiding wildcard COPY)
 COPY --chown=appuser:appuser main.py /app/
+RUN chmod 444 /app/main.py
 
 # Switch to the non-root user
 USER appuser
