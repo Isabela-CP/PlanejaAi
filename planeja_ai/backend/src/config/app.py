@@ -1,11 +1,13 @@
 import os
 from flask import Flask
 from flask_cors import CORS
+import re
 from .database import db
 
 def create_app() -> Flask:
     app = Flask(__name__)
-    CORS(app) # Habilita acesso Web (Cross-Origin)
+    # SonarQube: Never use permissive CORS (*). Restricting to localhost.
+    CORS(app, origins=re.compile(r"^http://(localhost|127\.0\.0\.1)(:\d+)?$"))
     
     # SonarQube / Security: Never hardcode sensitive credentials. 
     # Always fetch from environment securely.
