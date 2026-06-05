@@ -55,10 +55,10 @@ def login():
     if not user or not verify_password(data['password'], user.password_hash):
         return jsonify({"error": "Credenciais inválidas"}), 401
         
-    token = generate_token(user.id)
+    token = generate_token(str(user.id))
     return jsonify({
         "token": token, 
-        "user": {"id": user.id, "name": user.name, "email": user.email}
+        "user": {"id": str(user.id), "name": user.name, "email": user.email}
     }), 200
 
 # Etapa 5: Rotas Autenticadas e Logout
@@ -70,7 +70,7 @@ def me():
         return jsonify({"error": "Usuário não encontrado"}), 404
         
     return jsonify({
-        "id": user.id,
+        "id": str(user.id),
         "name": user.name,
         "email": user.email,
         "age": user.age,

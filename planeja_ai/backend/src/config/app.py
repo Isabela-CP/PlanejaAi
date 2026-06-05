@@ -1,9 +1,11 @@
 import os
 from flask import Flask
+from flask_cors import CORS
 from .database import db
 
 def create_app() -> Flask:
     app = Flask(__name__)
+    CORS(app) # Habilita acesso Web (Cross-Origin)
     
     # SonarQube / Security: Never hardcode sensitive credentials. 
     # Always fetch from environment securely.
