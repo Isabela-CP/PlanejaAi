@@ -17,6 +17,11 @@ def create_app() -> Flask:
     # Initialize the database extension
     db.init_app(app)
     
+    # Registra as rotas
+    with app.app_context():
+        from src.app.controllers.auth import auth_bp
+        app.register_blueprint(auth_bp)
+    
     @app.route("/")
     def index() -> dict:
         return {"status": "online", "service": "Planeja.AI Flask API"}
