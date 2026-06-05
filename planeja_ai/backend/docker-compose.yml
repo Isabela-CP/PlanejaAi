@@ -29,6 +29,7 @@ services:
       - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
       - FLASK_APP=src.config.app
       - FLASK_DEBUG=1
+      - JWT_SECRET=super-secret-jwt-key-change-in-prod
     volumes:
       - .:/app
     depends_on:
