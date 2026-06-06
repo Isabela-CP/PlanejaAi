@@ -14,8 +14,8 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       # Automatically run schema and seed scripts on container startup
-      - ./database/01_esquema.sql:/docker-entrypoint-initdb.d/01_esquema.sql:ro
-      - ./database/02_dados.sql:/docker-entrypoint-initdb.d/02_dados.sql:ro
+      - ./database/01_esquema.sql:/docker-entrypoint-initdb.d/01_esquema.sql:ro,z
+      - ./database/02_dados.sql:/docker-entrypoint-initdb.d/02_dados.sql:ro,z
 
   web:
     build:
@@ -31,7 +31,7 @@ services:
       - FLASK_DEBUG=1
       - JWT_SECRET=super-secret-jwt-key-change-in-prod
     volumes:
-      - .:/app
+      - .:/app:z
     depends_on:
       - db
 

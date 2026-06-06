@@ -24,7 +24,9 @@ def create_app() -> Flask:
     # Registra as rotas
     with app.app_context():
         from src.app.controllers.auth import auth_bp
+        from src.app.controllers.categories import categories_bp
         app.register_blueprint(auth_bp)
+        app.register_blueprint(categories_bp)
     
     @app.route("/")
     def index() -> dict:
