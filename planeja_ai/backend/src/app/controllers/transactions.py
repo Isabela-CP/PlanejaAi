@@ -96,6 +96,57 @@ def create_transaction():
 
     return jsonify(tx.to_dict()), 201
 
+def update_category_field(data, tx, user_id):
+    """Valida e aplica a atualização do campo de categoria se fornecido."""
+    if 'categoryId' not in data:
+        return None, None
+    category_id = data.get('categoryId')
+    if not category_id:
+        tx.category_id = None
+        return None, None
+    _, err = validate_category(category_id, user_id)
+    if err:
+        status_code = 404 if 'não encontrada' in err else 400
+        return err, status_code
+    tx.category_id = category_id
+    return None, None
+
+def validate_and_apply_update(data, tx, user_id):
+    """Valida as entradas de atualização de uma transação e aplica-as se corretas."""
+    title = data.get('title')
+    tx_type = data.get('type', tx.type).strip()
+    amount = data.get('amount')
+    date_str = data.get('date')
+
+    if title is not None:
+        title = title.strip()
+        if not title:
+            return 'O campo title não pode ser vazio', 400
+        tx.title = title
+
+    if tx_type not in ['income', 'expense']:
+        return "O tipo deve ser 'income' ou 'expense'", 400
+
+    amount_val, err = parse_and_validate_amount(amount)
+    if err:
+        return err, 400
+    if amount_val is not None:
+        tx.value = amount_val
+
+    tx_date, err = parse_and_validate_date(date_str)
+    if err:
+        return err, 400
+    if tx_date is not None:
+        tx.date = tx_date
+
+    err, status_code = update_category_field(data, tx, user_id)
+    if err:
+        return err, status_code
+
+    tx.type = tx_type
+    tx.description = data.get('description', tx.description)
+    return None, None
+
 @transactions_bp.route('/<string:transaction_id>', methods=['PUT'])
 @login_required
 def update_transaction(transaction_id):
@@ -104,46 +155,9 @@ def update_transaction(transaction_id):
         return jsonify({'error': 'Transação não encontrada'}), 404
 
     data = request.get_json() or {}
-    title = data.get('title')
-    tx_type = data.get('type', tx.type).strip()
-    amount = data.get('amount')
-    date_str = data.get('date')
-    description = data.get('description', tx.description)
-    category_id = data.get('categoryId')
-
-    if title is not None:
-        title = title.strip()
-        if not title:
-            return jsonify({'error': 'O campo title não pode ser vazio'}), 400
-        tx.title = title
-
-    if tx_type not in ['income', 'expense']:
-        return jsonify({'error': "O tipo deve ser 'income' ou 'expense'"}), 400
-
-    amount_val, err = parse_and_validate_amount(amount)
+    err, status_code = validate_and_apply_update(data, tx, request.user_id)
     if err:
-        return jsonify({'error': err}), 400
-    if amount_val is not None:
-        tx.value = amount_val
-
-    tx_date, err = parse_and_validate_date(date_str)
-    if err:
-        return jsonify({'error': err}), 400
-    if tx_date is not None:
-        tx.date = tx_date
-
-    if 'categoryId' in data:
-        if category_id:
-            _, err = validate_category(category_id, request.user_id)
-            if err:
-                status_code = 404 if 'não encontrada' in err else 400
-                return jsonify({'error': err}), status_code
-            tx.category_id = category_id
-        else:
-            tx.category_id = None
-
-    tx.type = tx_type
-    tx.description = description
+        return jsonify({'error': err}), status_code
 
     db.session.commit()
     return jsonify(tx.to_dict()), 200
