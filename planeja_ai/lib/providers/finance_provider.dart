@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../core/models/category.dart';
 import '../core/models/transaction.dart';
+import '../core/models/budget.dart';
 
 class FinanceProvider extends ChangeNotifier {
   final _storage = const FlutterSecureStorage();
@@ -12,8 +13,10 @@ class FinanceProvider extends ChangeNotifier {
   List<AppCategory> _transactionCategories = [];
   List<AppCategory> _goalCategories = [];
   List<Transaction> _transactions = [];
+  List<Budget> _budgets = [];
   bool _isLoadingCategories = false;
   bool _isLoadingTransactions = false;
+  bool _isLoadingBudgets = false;
 
   double _balance = 0.0;
   double _income = 0.0;
@@ -23,8 +26,10 @@ class FinanceProvider extends ChangeNotifier {
   List<AppCategory> get goalCategories => List.unmodifiable(_goalCategories);
   List<AppCategory> get categories => transactionCategories;
   List<Transaction> get transactions => List.unmodifiable(_transactions);
+  List<Budget> get budgets => List.unmodifiable(_budgets);
   bool get isLoadingCategories => _isLoadingCategories;
   bool get isLoadingTransactions => _isLoadingTransactions;
+  bool get isLoadingBudgets => _isLoadingBudgets;
 
   double get balance => _balance;
   double get income => _income;
@@ -211,6 +216,102 @@ class FinanceProvider extends ChangeNotifier {
     } else {
       final msg = (json.decode(response.body) as Map<String, dynamic>)['error'] ??
           'Erro ao remover transação';
+      throw Exception(msg);
+    }
+  }
+
+  Future<void> fetchBudgets({DateTime? date}) async {
+    _isLoadingBudgets = true;
+    notifyListeners();
+    try {
+      final queryDate = date ?? DateTime.now();
+      final dateStr = "${queryDate.year.toString().padLeft(4, '0')}-${queryDate.month.toString().padLeft(2, '0')}-01";
+      final response = await http.get(
+        Uri.parse('$_baseUrl/budgets?date=$dateStr'),
+        headers: await _headers,
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body) as List;
+        _budgets = data
+            .map((e) => Budget.fromJson(e as Map<String, dynamic>))
+            .toList();
+      }
+    } catch (e) {
+      debugPrint('fetchBudgets error: $e');
+    } finally {
+      _isLoadingBudgets = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> addBudget({
+    required String categoryId,
+    required double limit,
+    required int resetDay,
+    DateTime? date,
+  }) async {
+    final queryDate = date ?? DateTime.now();
+    final dateStr = "${queryDate.year.toString().padLeft(4, '0')}-${queryDate.month.toString().padLeft(2, '0')}-01";
+    final response = await http.post(
+      Uri.parse('$_baseUrl/budgets'),
+      headers: await _headers,
+      body: json.encode({
+        'categoryId': categoryId,
+        'monthlyLimit': limit,
+        'resetDay': resetDay,
+        'date': dateStr,
+      }),
+    );
+    if (response.statusCode == 201) {
+      final newBudget = Budget.fromJson(json.decode(response.body) as Map<String, dynamic>);
+      _budgets.add(newBudget);
+      notifyListeners();
+    } else {
+      final msg = (json.decode(response.body) as Map<String, dynamic>)['error'] ??
+          'Erro ao criar orçamento';
+      throw Exception(msg);
+    }
+  }
+
+  Future<void> updateBudget(
+    String id, {
+    double? limit,
+    int? resetDay,
+  }) async {
+    final body = {
+      if (limit != null) 'monthlyLimit': limit,
+      if (resetDay != null) 'resetDay': resetDay,
+    };
+    final response = await http.put(
+      Uri.parse('$_baseUrl/budgets/$id'),
+      headers: await _headers,
+      body: json.encode(body),
+    );
+    if (response.statusCode == 200) {
+      final updatedBudget = Budget.fromJson(json.decode(response.body) as Map<String, dynamic>);
+      final idx = _budgets.indexWhere((b) => b.id == id);
+      if (idx != -1) {
+        _budgets[idx] = updatedBudget;
+        notifyListeners();
+      }
+    } else {
+      final msg = (json.decode(response.body) as Map<String, dynamic>)['error'] ??
+          'Erro ao atualizar orçamento';
+      throw Exception(msg);
+    }
+  }
+
+  Future<void> deleteBudget(String id) async {
+    final response = await http.delete(
+      Uri.parse('$_baseUrl/budgets/$id'),
+      headers: await _headers,
+    );
+    if (response.statusCode == 200) {
+      _budgets.removeWhere((b) => b.id == id);
+      notifyListeners();
+    } else {
+      final msg = (json.decode(response.body) as Map<String, dynamic>)['error'] ??
+          'Erro ao remover orçamento';
       throw Exception(msg);
     }
   }

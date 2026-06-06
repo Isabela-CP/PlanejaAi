@@ -1,11 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../core/models/budget.dart';
+
+const _kIcons = <String, IconData>{
+  'utensils': LucideIcons.utensils,
+  'car': LucideIcons.car,
+  'palmtree': LucideIcons.palmtree,
+  'home': LucideIcons.home,
+  'trending-up': LucideIcons.trendingUp,
+  'shopping-cart': LucideIcons.shoppingCart,
+  'bus': LucideIcons.bus,
+  'ticket': LucideIcons.ticket,
+  'sandwich': LucideIcons.sandwich,
+  'book-open': LucideIcons.bookOpen,
+  'help-circle': LucideIcons.helpCircle,
+  'heart': LucideIcons.heart,
+  'briefcase': LucideIcons.briefcase,
+  'music': LucideIcons.music,
+  'gamepad-2': LucideIcons.gamepad2,
+  'plane': LucideIcons.plane,
+  'dumbbell': LucideIcons.dumbbell,
+  'baby': LucideIcons.baby,
+  'shirt': LucideIcons.shirt,
+  'wifi': LucideIcons.wifi,
+  'zap': LucideIcons.zap,
+  'gift': LucideIcons.gift,
+  'coffee': LucideIcons.coffee,
+  'dollar-sign': LucideIcons.dollarSign,
+  'piggy-bank': LucideIcons.piggyBank,
+  'graduation-cap': LucideIcons.graduationCap,
+  'stethoscope': LucideIcons.stethoscope,
+  'paw-print': LucideIcons.pawPrint,
+  'film': LucideIcons.film,
+};
 
 class BudgetCard extends StatelessWidget {
   final Budget budget;
+  final VoidCallback? onDelete;
 
-  const BudgetCard({Key? key, required this.budget}) : super(key: key);
+  const BudgetCard({
+    Key? key,
+    required this.budget,
+    this.onDelete,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -24,6 +62,14 @@ class BudgetCard extends StatelessWidget {
     
     final mutedColor = theme.colorScheme.onSurface.withOpacity(0.6);
 
+    final categoryColor = budget.categoryObj != null 
+        ? Color(budget.categoryObj!.colorValue) 
+        : theme.colorScheme.primary;
+
+    final categoryIcon = budget.categoryObj != null
+        ? (_kIcons[budget.categoryObj!.iconName] ?? LucideIcons.helpCircle)
+        : LucideIcons.helpCircle;
+
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -32,39 +78,71 @@ class BudgetCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Cabeçalho da categoria e status
+            // Cabeçalho da categoria, status e botão de deletar
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  budget.category,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: statusColor.withOpacity(0.5)),
-                  ),
+                Expanded(
                   child: Row(
                     children: [
-                      Text(
-                        budget.statusLabel,
-                        style: TextStyle(
-                          color: statusColor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: categoryColor.withOpacity(0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(categoryIcon, color: categoryColor, size: 18),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          budget.category,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      if (isDanger || isWarning) ...[
-                        const SizedBox(width: 4),
-                        Icon(Icons.warning_amber_rounded, size: 14, color: statusColor),
-                      ]
                     ],
                   ),
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: statusColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: statusColor.withOpacity(0.5)),
+                      ),
+                      child: Row(
+                        children: [
+                          Text(
+                            budget.statusLabel,
+                            style: TextStyle(
+                              color: statusColor,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          if (isDanger || isWarning) ...[
+                            const SizedBox(width: 4),
+                            Icon(Icons.warning_amber_rounded, size: 12, color: statusColor),
+                          ]
+                        ],
+                      ),
+                    ),
+                    if (onDelete != null) ...[
+                      const SizedBox(width: 4),
+                      IconButton(
+                        constraints: const BoxConstraints(),
+                        padding: EdgeInsets.zero,
+                        icon: Icon(LucideIcons.trash2, size: 16, color: theme.colorScheme.error.withOpacity(0.7)),
+                        onPressed: onDelete,
+                      ),
+                    ],
+                  ],
                 ),
               ],
             ),
@@ -110,9 +188,9 @@ class BudgetCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Divider(color: theme.dividerColor),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
 
             // Disponível Mensal e Semanal
             Row(
@@ -132,14 +210,14 @@ class BudgetCard extends StatelessWidget {
                       Text(
                         currencyFormatter.format(budget.monthlyRemaining),
                         style: TextStyle(
-                          fontSize: 16, 
+                          fontSize: 15, 
                           fontWeight: FontWeight.bold,
                           color: budget.monthlyRemaining >= 0 ? Colors.green : theme.colorScheme.error,
                         ),
                       ),
                       Text(
                         '${budget.daysLeftInMonth} dias restantes',
-                        style: TextStyle(color: mutedColor, fontSize: 11),
+                        style: TextStyle(color: mutedColor, fontSize: 10),
                       ),
                     ],
                   ),
@@ -160,14 +238,14 @@ class BudgetCard extends StatelessWidget {
                       Text(
                         currencyFormatter.format(budget.weeklyRemaining),
                         style: TextStyle(
-                          fontSize: 16, 
+                          fontSize: 15, 
                           fontWeight: FontWeight.bold,
                           color: budget.weeklyRemaining >= 0 ? Colors.green : theme.colorScheme.error,
                         ),
                       ),
                       Text(
                         'disponível por semana',
-                        style: TextStyle(color: mutedColor, fontSize: 11),
+                        style: TextStyle(color: mutedColor, fontSize: 10),
                       ),
                     ],
                   ),
