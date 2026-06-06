@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
+    title VARCHAR(100) NOT NULL,
     type VARCHAR(10) NOT NULL CHECK (type IN ('income', 'expense')),
     value NUMERIC(15, 2) NOT NULL CHECK (value > 0),
     date DATE NOT NULL,

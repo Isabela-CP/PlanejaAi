@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import '../core/models/category.dart';
+import '../core/models/transaction.dart';
 import '../providers/finance_provider.dart';
 
 const _kIcons = <String, IconData>{
@@ -44,24 +45,6 @@ const _kColorPalette = <Color>[
   Color(0xFF6B7280), Color(0xFF14B8A6), Color(0xFF84CC16), Color(0xFFFF5733),
 ];
 
-class Transaction {
-  final String id;
-  final String type;
-  final double amount;
-  final String category;
-  final DateTime date;
-  final String description;
-
-  Transaction({
-    required this.id,
-    required this.type,
-    required this.amount,
-    required this.category,
-    required this.date,
-    required this.description,
-  });
-}
-
 class TransactionsScreen extends StatefulWidget {
   const TransactionsScreen({super.key});
 
@@ -72,6 +55,7 @@ class TransactionsScreen extends StatefulWidget {
 class _TransactionsScreenState extends State<TransactionsScreen> {
   bool _showForm = false;
   String _type = 'expense';
+  final _titleController = TextEditingController();
   final _amountController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _categoryController = TextEditingController();
@@ -80,32 +64,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   bool _isDialogOpen = false;
   DateTime _date = DateTime.now();
 
-  List<Transaction> _transactions = [
-    Transaction(
-      id: '1',
-      type: 'income',
-      amount: 3500,
-      category: 'Salário',
-      date: DateTime(2024, 1, 15),
-      description: 'Salário mensal',
-    ),
-    Transaction(
-      id: '2',
-      type: 'expense',
-      amount: 250,
-      category: 'Alimentação',
-      date: DateTime(2024, 1, 14),
-      description: 'Compras no supermercado',
-    ),
-    Transaction(
-      id: '3',
-      type: 'expense',
-      amount: 80,
-      category: 'Transporte',
-      date: DateTime(2024, 1, 13),
-      description: 'Gasolina',
-    ),
-  ];
+  bool _isLoading = false;
 
   final _formatCurrency = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
   final _formatDate = DateFormat('dd/MM/yyyy');
@@ -114,7 +73,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<FinanceProvider>().fetchCategories();
+      final provider = context.read<FinanceProvider>();
+      provider.fetchCategories();
+      provider.fetchTransactions();
     });
 
     _categoryFocusNode.addListener(() {
@@ -128,6 +89,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
   @override
   void dispose() {
+    _titleController.dispose();
     _amountController.dispose();
     _descriptionController.dispose();
     _categoryController.dispose();
@@ -186,11 +148,46 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     }
   }
 
-  void _handleSubmit() {
+  Future<void> _deleteTransaction(String id) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Excluir Transação'),
+        content: const Text('Tem certeza que deseja excluir esta transação?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            child: const Text('Excluir'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      await context.read<FinanceProvider>().deleteTransaction(id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Transação excluída com sucesso!'), backgroundColor: Colors.green),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', '')), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  Future<void> _handleSubmit() async {
+    final titleText = _titleController.text.trim();
     final categoryText = _categoryController.text.trim();
-    if (_amountController.text.isEmpty || categoryText.isEmpty) {
+    if (titleText.isEmpty || _amountController.text.isEmpty || categoryText.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor, preencha valor e categoria')),
+        const SnackBar(content: Text('Por favor, preencha o título, valor e categoria')),
       );
       return;
     }
@@ -203,27 +200,49 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       return;
     }
 
+    setState(() => _isLoading = true);
+
+    final provider = context.read<FinanceProvider>();
+    final matched = provider.transactionCategories.firstWhere(
+      (c) => c.name.toLowerCase() == categoryText.toLowerCase(),
+      orElse: () => AppCategory(id: '', name: '', colorHex: '', iconName: '', type: 'transaction'),
+    );
+
     final newTransaction = Transaction(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: '',
+      title: titleText,
       type: _type,
       amount: amount,
-      category: categoryText,
+      categoryName: matched.id.isNotEmpty ? matched.name : categoryText,
+      category: matched.id.isNotEmpty ? matched : null,
       date: _date,
       description: _descriptionController.text,
     );
 
-    setState(() {
-      _transactions.insert(0, newTransaction);
-      _showForm = false;
-      _amountController.clear();
-      _descriptionController.clear();
-      _categoryController.clear();
-      _showCategoryOptions = false;
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Transação adicionada com sucesso!')),
-    );
+    try {
+      await provider.addTransaction(newTransaction);
+      setState(() {
+        _showForm = false;
+        _titleController.clear();
+        _amountController.clear();
+        _descriptionController.clear();
+        _categoryController.clear();
+        _showCategoryOptions = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Transação adicionada com sucesso!'), backgroundColor: Colors.green),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', '')), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -245,6 +264,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 ElevatedButton.icon(
                   onPressed: () => setState(() {
                     _showForm = !_showForm;
+                    _titleController.clear();
                     _categoryController.clear();
                     _showCategoryOptions = false;
                   }),
@@ -279,7 +299,20 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                           'Nova Transação',
                           style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                         ),
-                      const SizedBox(height: 24),
+                        const SizedBox(height: 24),
+                        TextField(
+                          controller: _titleController,
+                          decoration: const InputDecoration(
+                            labelText: 'Título da Transação',
+                            hintText: 'Ex: Compra no Supermercado, Salário',
+                          ),
+                          onTap: () {
+                            setState(() {
+                              _showCategoryOptions = false;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 16),
                       LayoutBuilder(
                         builder: (context, constraints) {
                           return GridView.count(
@@ -495,17 +528,20 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       Row(
                         children: [
                           ElevatedButton(
-                            onPressed: _handleSubmit,
+                            onPressed: _isLoading ? null : _handleSubmit,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Theme.of(context).colorScheme.primary,
                               foregroundColor: Theme.of(context).colorScheme.onPrimary,
                             ),
-                            child: const Text('Adicionar Transação'),
+                            child: _isLoading
+                                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                : const Text('Adicionar Transação'),
                           ),
                           const SizedBox(width: 16),
                           OutlinedButton(
                             onPressed: () => setState(() {
                               _showForm = false;
+                              _titleController.clear();
                               _categoryController.clear();
                               _showCategoryOptions = false;
                             }),
@@ -537,79 +573,130 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 24),
-                    if (_transactions.isEmpty)
-                      const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(32.0),
-                          child: Text(
-                            'Nenhuma transação ainda. Adicione sua primeira!',
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        ),
-                      )
-                    else
-                      ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: _transactions.length,
-                        separatorBuilder: (context, index) => const Divider(height: 1),
-                        itemBuilder: (context, index) {
-                          final t = _transactions[index];
-                          final isIncome = t.type == 'income';
-                          final color = isIncome ? const Color(0xFF10B981) : const Color(0xFFEF4444);
+                    Consumer<FinanceProvider>(
+                      builder: (context, provider, _) {
+                        if (provider.isLoadingTransactions) {
+                          return const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(32.0),
+                              child: CircularProgressIndicator(),
+                            ),
+                          );
+                        }
 
-                          return ListTile(
-                            contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                            hoverColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
-                            leading: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: color.withOpacity(0.1),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                isIncome ? LucideIcons.arrowUpRight : LucideIcons.arrowDownLeft,
-                                color: color,
-                                size: 20,
+                        final list = provider.transactions;
+                        if (list.isEmpty) {
+                          return const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(32.0),
+                              child: Text(
+                                'Nenhuma transação ainda. Adicione sua primeira!',
+                                style: TextStyle(color: Colors.grey),
                               ),
                             ),
-                            title: Text(
-                              t.description.isNotEmpty ? t.description : t.category,
-                              style: const TextStyle(fontWeight: FontWeight.w600),
-                            ),
-                            subtitle: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context).colorScheme.surfaceVariant,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    t.category,
-                                    style: const TextStyle(fontSize: 12),
-                                  ),
+                          );
+                        }
+
+                        return ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: list.length,
+                          separatorBuilder: (context, index) => const Divider(height: 1),
+                          itemBuilder: (context, index) {
+                            final t = list[index];
+                            final isIncome = t.type == 'income';
+                            final baseColor = isIncome ? const Color(0xFF10B981) : const Color(0xFFEF4444);
+
+                            final hasCat = t.category != null;
+                            final color = hasCat ? Color(t.category!.colorValue) : baseColor;
+                            final icon = hasCat
+                                ? (_kIcons[t.category!.iconName] ?? LucideIcons.helpCircle)
+                                : (isIncome ? LucideIcons.arrowUpRight : LucideIcons.arrowDownLeft);
+
+                            return ListTile(
+                              contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                              hoverColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
+                              leading: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: color.withOpacity(0.15),
+                                  shape: BoxShape.circle,
                                 ),
-                                const SizedBox(width: 8),
-                                Icon(LucideIcons.calendar, size: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                                const SizedBox(width: 4),
-                                Text(
-                                  _formatDate.format(t.date),
-                                  style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                                child: Icon(
+                                  icon,
+                                  color: color,
+                                  size: 20,
                                 ),
-                              ],
-                            ),
-                            trailing: Text(
-                              '${isIncome ? '+' : '-'}${_formatCurrency.format(t.amount)}',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: color,
                               ),
-                            ),
-                          ).animate().fade(duration: 400.ms, delay: (50 * index).ms).slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut);
-                        },
-                      ),
+                              title: Text(
+                                t.title,
+                                style: const TextStyle(fontWeight: FontWeight.w600),
+                              ),
+                              subtitle: Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (t.description.isNotEmpty) ...[
+                                      Text(
+                                        t.description,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.85),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                    ],
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: color.withOpacity(0.12),
+                                            borderRadius: BorderRadius.circular(12),
+                                            border: Border.all(color: color.withOpacity(0.3)),
+                                          ),
+                                          child: Text(
+                                            t.categoryName,
+                                            style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Icon(LucideIcons.calendar, size: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          _formatDate.format(t.date),
+                                          style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    '${isIncome ? '+' : '-'}${_formatCurrency.format(t.amount)}',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: baseColor,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  IconButton(
+                                    icon: const Icon(LucideIcons.trash2, size: 16, color: Colors.grey),
+                                    hoverColor: Colors.red.withOpacity(0.1),
+                                    onPressed: () => _deleteTransaction(t.id),
+                                  ),
+                                ],
+                              ),
+                            ).animate().fade(duration: 400.ms, delay: (50 * index).ms).slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut);
+                          },
+                        );
+                      },
+                    ),
                   ],
                 ),
               ),

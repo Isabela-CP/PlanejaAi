@@ -4,23 +4,27 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../core/models/category.dart';
+import '../core/models/transaction.dart';
 
 class FinanceProvider extends ChangeNotifier {
   final _storage = const FlutterSecureStorage();
 
   List<AppCategory> _transactionCategories = [];
   List<AppCategory> _goalCategories = [];
+  List<Transaction> _transactions = [];
   bool _isLoadingCategories = false;
+  bool _isLoadingTransactions = false;
 
-  // Mudar depois para o backend
-  double _balance = 24500.0;
-  double _income = 5200.0;
-  double _expenses = 2700.0;
+  double _balance = 0.0;
+  double _income = 0.0;
+  double _expenses = 0.0;
 
   List<AppCategory> get transactionCategories => List.unmodifiable(_transactionCategories);
   List<AppCategory> get goalCategories => List.unmodifiable(_goalCategories);
-  List<AppCategory> get categories => transactionCategories; // Antigas, adicionar depois
+  List<AppCategory> get categories => transactionCategories;
+  List<Transaction> get transactions => List.unmodifiable(_transactions);
   bool get isLoadingCategories => _isLoadingCategories;
+  bool get isLoadingTransactions => _isLoadingTransactions;
 
   double get balance => _balance;
   double get income => _income;
@@ -138,15 +142,76 @@ class FinanceProvider extends ChangeNotifier {
     }
   }
 
-  // Mudar depois para o backend
-  void addTransaction(double amount, bool isIncome) {
-    if (isIncome) {
-      _income += amount;
-      _balance += amount;
-    } else {
-      _expenses += amount;
-      _balance -= amount;
-    }
+  Future<void> fetchTransactions() async {
+    _isLoadingTransactions = true;
     notifyListeners();
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/transactions'),
+        headers: await _headers,
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body) as List;
+        _transactions = data
+            .map((e) => Transaction.fromJson(e as Map<String, dynamic>))
+            .toList();
+        
+        _recalculateBalances();
+      }
+    } catch (e) {
+      debugPrint('fetchTransactions error: $e');
+    } finally {
+      _isLoadingTransactions = false;
+      notifyListeners();
+    }
+  }
+
+  void _recalculateBalances() {
+    double inc = 0.0;
+    double exp = 0.0;
+    for (var tx in _transactions) {
+      if (tx.type == 'income') {
+        inc += tx.amount;
+      } else {
+        exp += tx.amount;
+      }
+    }
+    _income = inc;
+    _expenses = exp;
+    _balance = inc - exp;
+  }
+
+  Future<void> addTransaction(Transaction tx) async {
+    final response = await http.post(
+      Uri.parse('$_baseUrl/transactions'),
+      headers: await _headers,
+      body: json.encode(tx.toJson()),
+    );
+    if (response.statusCode == 201) {
+      final newTx = Transaction.fromJson(json.decode(response.body) as Map<String, dynamic>);
+      _transactions.insert(0, newTx);
+      _recalculateBalances();
+      notifyListeners();
+    } else {
+      final msg = (json.decode(response.body) as Map<String, dynamic>)['error'] ??
+          'Erro ao criar transação';
+      throw Exception(msg);
+    }
+  }
+
+  Future<void> deleteTransaction(String id) async {
+    final response = await http.delete(
+      Uri.parse('$_baseUrl/transactions/$id'),
+      headers: await _headers,
+    );
+    if (response.statusCode == 200) {
+      _transactions.removeWhere((tx) => tx.id == id);
+      _recalculateBalances();
+      notifyListeners();
+    } else {
+      final msg = (json.decode(response.body) as Map<String, dynamic>)['error'] ??
+          'Erro ao remover transação';
+      throw Exception(msg);
+    }
   }
 }
