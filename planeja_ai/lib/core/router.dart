@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
 import '../screens/login_screen.dart';
+import '../screens/signup_screen.dart';
 import '../screens/layout_screen.dart';
 import '../screens/dashboard_screen.dart';
 import '../screens/transactions_screen.dart';
@@ -33,6 +34,10 @@ GoRouter createRouter(AuthProvider authProvider) {
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/signup',
+        builder: (context, state) => const SignupScreen(),
       ),
       ShellRoute(
         navigatorKey: _shellNavigatorKey,

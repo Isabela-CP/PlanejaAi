@@ -22,13 +22,13 @@ COPY --chown=root:root --chmod=444 requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy only the files strictly required to run the application (no wildcard COPY)
-COPY --chown=root:root --chmod=444 main.py /app/
+COPY --chown=root:root --chmod=555 src/ /app/src/
 
 # Switch to the non-root user
 USER appuser
 
-# Expose port 8000 for FastAPI
+# Expose port 8000 for Flask
 EXPOSE 8000
 
-# Command to run uvicorn server (assuming main.py contains the FastAPI app named app)
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Command to run Flask server
+CMD ["flask", "run", "--host=0.0.0.0", "--port=8000"]
