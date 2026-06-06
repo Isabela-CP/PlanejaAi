@@ -55,6 +55,7 @@ class TransactionsScreen extends StatefulWidget {
 class _TransactionsScreenState extends State<TransactionsScreen> {
   bool _showForm = false;
   String _type = 'expense';
+  final _titleController = TextEditingController();
   final _amountController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _categoryController = TextEditingController();
@@ -88,6 +89,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
   @override
   void dispose() {
+    _titleController.dispose();
     _amountController.dispose();
     _descriptionController.dispose();
     _categoryController.dispose();
@@ -181,10 +183,11 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   }
 
   Future<void> _handleSubmit() async {
+    final titleText = _titleController.text.trim();
     final categoryText = _categoryController.text.trim();
-    if (_amountController.text.isEmpty || categoryText.isEmpty) {
+    if (titleText.isEmpty || _amountController.text.isEmpty || categoryText.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor, preencha valor e categoria')),
+        const SnackBar(content: Text('Por favor, preencha o título, valor e categoria')),
       );
       return;
     }
@@ -207,6 +210,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
     final newTransaction = Transaction(
       id: '',
+      title: titleText,
       type: _type,
       amount: amount,
       categoryName: matched.id.isNotEmpty ? matched.name : categoryText,
@@ -219,6 +223,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       await provider.addTransaction(newTransaction);
       setState(() {
         _showForm = false;
+        _titleController.clear();
         _amountController.clear();
         _descriptionController.clear();
         _categoryController.clear();
@@ -259,6 +264,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 ElevatedButton.icon(
                   onPressed: () => setState(() {
                     _showForm = !_showForm;
+                    _titleController.clear();
                     _categoryController.clear();
                     _showCategoryOptions = false;
                   }),
@@ -293,7 +299,20 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                           'Nova Transação',
                           style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                         ),
-                      const SizedBox(height: 24),
+                        const SizedBox(height: 24),
+                        TextField(
+                          controller: _titleController,
+                          decoration: const InputDecoration(
+                            labelText: 'Título da Transação',
+                            hintText: 'Ex: Compra no Supermercado, Salário',
+                          ),
+                          onTap: () {
+                            setState(() {
+                              _showCategoryOptions = false;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 16),
                       LayoutBuilder(
                         builder: (context, constraints) {
                           return GridView.count(
@@ -522,6 +541,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                           OutlinedButton(
                             onPressed: () => setState(() {
                               _showForm = false;
+                              _titleController.clear();
                               _categoryController.clear();
                               _showCategoryOptions = false;
                             }),
@@ -609,31 +629,46 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                 ),
                               ),
                               title: Text(
-                                t.description.isNotEmpty ? t.description : t.categoryName,
+                                t.title,
                                 style: const TextStyle(fontWeight: FontWeight.w600),
                               ),
                               subtitle: Padding(
                                 padding: const EdgeInsets.only(top: 4),
-                                child: Row(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: color.withOpacity(0.12),
-                                        borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(color: color.withOpacity(0.3)),
+                                    if (t.description.isNotEmpty) ...[
+                                      Text(
+                                        t.description,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.85),
+                                        ),
                                       ),
-                                      child: Text(
-                                        t.categoryName,
-                                        style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Icon(LucideIcons.calendar, size: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      _formatDate.format(t.date),
-                                      style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                                      const SizedBox(height: 6),
+                                    ],
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: color.withOpacity(0.12),
+                                            borderRadius: BorderRadius.circular(12),
+                                            border: Border.all(color: color.withOpacity(0.3)),
+                                          ),
+                                          child: Text(
+                                            t.categoryName,
+                                            style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Icon(LucideIcons.calendar, size: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          _formatDate.format(t.date),
+                                          style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),

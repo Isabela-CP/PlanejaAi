@@ -7,6 +7,7 @@ class Transaction(db.Model):
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id = db.Column(db.String(36), db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     category_id = db.Column(db.String(36), db.ForeignKey('categories.id', ondelete='SET NULL'), nullable=True)
+    title = db.Column(db.String(100), nullable=False)
     type = db.Column(db.String(10), nullable=False)  # 'income' ou 'expense'
     value = db.Column(db.Numeric(15, 2), nullable=False)
     date = db.Column(db.Date, nullable=False)
@@ -21,6 +22,7 @@ class Transaction(db.Model):
             'id': self.id,
             'userId': self.user_id,
             'categoryId': self.category_id,
+            'title': self.title,
             'type': self.type,
             'amount': float(self.value) if self.value is not None else 0.0,
             'date': self.date.isoformat() if self.date else None,

@@ -2,6 +2,7 @@ import 'category.dart';
 
 class Transaction {
   final String id;
+  final String title;
   final String type;
   final double amount;
   final String categoryName;
@@ -11,6 +12,7 @@ class Transaction {
 
   Transaction({
     required this.id,
+    required this.title,
     required this.type,
     required this.amount,
     required this.categoryName,
@@ -27,6 +29,7 @@ class Transaction {
 
     return Transaction(
       id: json['id'] as String,
+      title: json['title'] as String? ?? '',
       type: json['type'] as String,
       amount: (json['amount'] as num).toDouble(),
       categoryName: cat?.name ?? '',
@@ -38,6 +41,7 @@ class Transaction {
 
   Map<String, dynamic> toJson() => {
         'id': id,
+        'title': title,
         'type': type,
         'amount': amount,
         'categoryId': category?.id,

@@ -17,11 +17,15 @@ def list_transactions():
 @login_required
 def create_transaction():
     data = request.get_json() or {}
+    title = data.get('title', '').strip()
     tx_type = data.get('type', '').strip()
     amount = data.get('amount')
     date_str = data.get('date', '').strip()
     description = data.get('description', '').strip()
     category_id = data.get('categoryId')
+
+    if not title:
+        return jsonify({'error': 'Campo obrigatório: title'}), 400
 
     if not tx_type or amount is None or not date_str:
         return jsonify({'error': 'Campos obrigatórios: type, amount, date'}), 400
@@ -52,6 +56,7 @@ def create_transaction():
     tx = Transaction(
         user_id=request.user_id,
         category_id=category_id,
+        title=title,
         type=tx_type,
         value=amount_val,
         date=tx_date,
@@ -71,11 +76,18 @@ def update_transaction(transaction_id):
         return jsonify({'error': 'Transação não encontrada'}), 404
 
     data = request.get_json() or {}
+    title = data.get('title')
     tx_type = data.get('type', tx.type).strip()
     amount = data.get('amount')
     date_str = data.get('date')
     description = data.get('description', tx.description)
     category_id = data.get('categoryId')
+
+    if title is not None:
+        title = title.strip()
+        if not title:
+            return jsonify({'error': 'O campo title não pode ser vazio'}), 400
+        tx.title = title
 
     if tx_type not in ['income', 'expense']:
         return jsonify({'error': "O tipo deve ser 'income' ou 'expense'"}), 400
