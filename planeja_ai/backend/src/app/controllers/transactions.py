@@ -7,6 +7,40 @@ from src.config.database import db
 
 transactions_bp = Blueprint('transactions', __name__, url_prefix='/api/transactions')
 
+def parse_and_validate_amount(amount):
+    """Valida e converte o valor da transação. Retorna (valor, erro)."""
+    if amount is None:
+        return None, None
+    try:
+        amount_val = float(amount)
+        if amount_val <= 0:
+            return None, 'O valor deve ser maior que zero'
+        return amount_val, None
+    except (ValueError, TypeError):
+        return None, 'Valor de amount inválido'
+
+def parse_and_validate_date(date_str):
+    """Valida e converte a string de data. Retorna (data, erro)."""
+    if not date_str:
+        return None, None
+    try:
+        clean_date = date_str.split('T')[0]
+        tx_date = datetime.strptime(clean_date, '%Y-%m-%d').date()
+        return tx_date, None
+    except Exception:
+        return None, 'Formato de data inválido. Use AAAA-MM-DD'
+
+def validate_category(category_id, user_id):
+    """Valida se a categoria existe e pertence ao usuário e tipo correto. Retorna (categoria, erro)."""
+    if not category_id:
+        return None, None
+    category = Category.query.filter_by(id=category_id, user_id=user_id).first()
+    if not category:
+        return None, 'Categoria não encontrada'
+    if category.type != 'transaction':
+        return None, 'A categoria fornecida deve ser do tipo transaction'
+    return category, None
+
 @transactions_bp.route('', methods=['GET'])
 @login_required
 def list_transactions():
@@ -33,25 +67,19 @@ def create_transaction():
     if tx_type not in ['income', 'expense']:
         return jsonify({'error': "O tipo deve ser 'income' ou 'expense'"}), 400
 
-    try:
-        amount_val = float(amount)
-        if amount_val <= 0:
-            return jsonify({'error': 'O valor deve ser maior que zero'}), 400
-    except (ValueError, TypeError):
-        return jsonify({'error': 'Valor de amount inválido'}), 400
+    amount_val, err = parse_and_validate_amount(amount)
+    if err:
+        return jsonify({'error': err}), 400
 
-    try:
-        clean_date = date_str.split('T')[0]
-        tx_date = datetime.strptime(clean_date, '%Y-%m-%d').date()
-    except Exception:
-        return jsonify({'error': 'Formato de data inválido. Use AAAA-MM-DD'}), 400
+    tx_date, err = parse_and_validate_date(date_str)
+    if err:
+        return jsonify({'error': err}), 400
 
     if category_id:
-        category = Category.query.filter_by(id=category_id, user_id=request.user_id).first()
-        if not category:
-            return jsonify({'error': 'Categoria não encontrada'}), 404
-        if category.type != 'transaction':
-            return jsonify({'error': 'A categoria fornecida deve ser do tipo transaction'}), 400
+        _, err = validate_category(category_id, request.user_id)
+        if err:
+            status_code = 404 if 'não encontrada' in err else 400
+            return jsonify({'error': err}), status_code
 
     tx = Transaction(
         user_id=request.user_id,
@@ -92,29 +120,24 @@ def update_transaction(transaction_id):
     if tx_type not in ['income', 'expense']:
         return jsonify({'error': "O tipo deve ser 'income' ou 'expense'"}), 400
 
-    if amount is not None:
-        try:
-            amount_val = float(amount)
-            if amount_val <= 0:
-                return jsonify({'error': 'O valor deve ser maior que zero'}), 400
-            tx.value = amount_val
-        except (ValueError, TypeError):
-            return jsonify({'error': 'Valor de amount inválido'}), 400
+    amount_val, err = parse_and_validate_amount(amount)
+    if err:
+        return jsonify({'error': err}), 400
+    if amount_val is not None:
+        tx.value = amount_val
 
-    if date_str:
-        try:
-            clean_date = date_str.split('T')[0]
-            tx.date = datetime.strptime(clean_date, '%Y-%m-%d').date()
-        except Exception:
-            return jsonify({'error': 'Formato de data inválido. Use AAAA-MM-DD'}), 400
+    tx_date, err = parse_and_validate_date(date_str)
+    if err:
+        return jsonify({'error': err}), 400
+    if tx_date is not None:
+        tx.date = tx_date
 
     if 'categoryId' in data:
         if category_id:
-            category = Category.query.filter_by(id=category_id, user_id=request.user_id).first()
-            if not category:
-                return jsonify({'error': 'Categoria não encontrada'}), 404
-            if category.type != 'transaction':
-                return jsonify({'error': 'A categoria fornecida deve ser do tipo transaction'}), 400
+            _, err = validate_category(category_id, request.user_id)
+            if err:
+                status_code = 404 if 'não encontrada' in err else 400
+                return jsonify({'error': err}), status_code
             tx.category_id = category_id
         else:
             tx.category_id = None
@@ -124,6 +147,7 @@ def update_transaction(transaction_id):
 
     db.session.commit()
     return jsonify(tx.to_dict()), 200
+
 
 @transactions_bp.route('/<string:transaction_id>', methods=['DELETE'])
 @login_required
