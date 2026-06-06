@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS budgets (
     category_id UUID NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
     limit_value NUMERIC(15, 2) NOT NULL CHECK (limit_value >= 0),
     month_year DATE NOT NULL, -- Standardized to 1st of the month, e.g. 2026-06-01
+    reset_day INT NOT NULL DEFAULT 1 CHECK (reset_day >= 1 AND reset_day <= 31),
     UNIQUE (user_id, category_id, month_year)
 );
 
