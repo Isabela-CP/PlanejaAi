@@ -8,14 +8,18 @@ import '../core/models/category.dart';
 class FinanceProvider extends ChangeNotifier {
   final _storage = const FlutterSecureStorage();
 
-  List<AppCategory> _categories = [];
+  List<AppCategory> _transactionCategories = [];
+  List<AppCategory> _goalCategories = [];
   bool _isLoadingCategories = false;
 
   // Mudar depois para o backend
   double _balance = 24500.0;
   double _income = 5200.0;
   double _expenses = 2700.0;
-  List<AppCategory> get categories => List.unmodifiable(_categories);
+
+  List<AppCategory> get transactionCategories => List.unmodifiable(_transactionCategories);
+  List<AppCategory> get goalCategories => List.unmodifiable(_goalCategories);
+  List<AppCategory> get categories => transactionCategories; // Antigas, adicionar depois
   bool get isLoadingCategories => _isLoadingCategories;
 
   double get balance => _balance;
@@ -33,19 +37,25 @@ class FinanceProvider extends ChangeNotifier {
     };
   }
 
-  Future<void> fetchCategories() async {
+  Future<void> fetchCategories({String type = 'transaction'}) async {
     _isLoadingCategories = true;
     notifyListeners();
     try {
       final response = await http.get(
-        Uri.parse('$_baseUrl/categories'),
+        Uri.parse('$_baseUrl/categories?type=$type'),
         headers: await _headers,
       );
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body) as List;
-        _categories = data
+        final loaded = data
             .map((e) => AppCategory.fromJson(e as Map<String, dynamic>))
             .toList();
+        
+        if (type == 'goal') {
+          _goalCategories = loaded;
+        } else {
+          _transactionCategories = loaded;
+        }
       }
     } catch (e) {
       debugPrint('fetchCategories error: $e');
@@ -55,6 +65,13 @@ class FinanceProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> fetchAllCategories() async {
+    await Future.wait([
+      fetchCategories(type: 'transaction'),
+      fetchCategories(type: 'goal'),
+    ]);
+  }
+
   Future<void> addCategory(AppCategory category) async {
     final response = await http.post(
       Uri.parse('$_baseUrl/categories'),
@@ -62,8 +79,12 @@ class FinanceProvider extends ChangeNotifier {
       body: json.encode(category.toJson()),
     );
     if (response.statusCode == 201) {
-      _categories.add(
-          AppCategory.fromJson(json.decode(response.body) as Map<String, dynamic>));
+      final newCat = AppCategory.fromJson(json.decode(response.body) as Map<String, dynamic>);
+      if (newCat.type == 'goal') {
+        _goalCategories.add(newCat);
+      } else {
+        _transactionCategories.add(newCat);
+      }
       notifyListeners();
     } else {
       final msg = (json.decode(response.body) as Map<String, dynamic>)['error'] ??
@@ -79,11 +100,20 @@ class FinanceProvider extends ChangeNotifier {
       body: json.encode(updated.toJson()),
     );
     if (response.statusCode == 200) {
-      final idx = _categories.indexWhere((c) => c.id == id);
-      if (idx != -1) {
-        _categories[idx] = AppCategory.fromJson(
-            json.decode(response.body) as Map<String, dynamic>);
-        notifyListeners();
+      final newCat = AppCategory.fromJson(json.decode(response.body) as Map<String, dynamic>);
+      
+      if (newCat.type == 'goal') {
+        final idx = _goalCategories.indexWhere((c) => c.id == id);
+        if (idx != -1) {
+          _goalCategories[idx] = newCat;
+          notifyListeners();
+        }
+      } else {
+        final idx = _transactionCategories.indexWhere((c) => c.id == id);
+        if (idx != -1) {
+          _transactionCategories[idx] = newCat;
+          notifyListeners();
+        }
       }
     } else {
       final msg = (json.decode(response.body) as Map<String, dynamic>)['error'] ??
@@ -98,7 +128,8 @@ class FinanceProvider extends ChangeNotifier {
       headers: await _headers,
     );
     if (response.statusCode == 200) {
-      _categories.removeWhere((c) => c.id == id);
+      _transactionCategories.removeWhere((c) => c.id == id);
+      _goalCategories.removeWhere((c) => c.id == id);
       notifyListeners();
     } else {
       final msg = (json.decode(response.body) as Map<String, dynamic>)['error'] ??

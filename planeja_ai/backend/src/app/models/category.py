@@ -10,6 +10,7 @@ class Category(db.Model):
     name = db.Column(db.String(100), nullable=False)
     color_hex = db.Column(db.String(7), nullable=False)
     icon_name = db.Column(db.String(50), nullable=False)
+    type = db.Column(db.String(20), nullable=False, default='transaction')
 
     def to_dict(self):
         return {
@@ -17,4 +18,5 @@ class Category(db.Model):
             'name': self.name,
             'colorHex': self.color_hex,
             'iconName': self.icon_name,
+            'type': self.type,
         }

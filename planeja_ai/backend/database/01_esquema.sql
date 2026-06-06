@@ -26,7 +26,8 @@ CREATE TABLE IF NOT EXISTS categories (
     name VARCHAR(100) NOT NULL,
     color_hex VARCHAR(7) NOT NULL CHECK (color_hex ~ '^#[0-9A-Fa-f]{6}$'),
     icon_name VARCHAR(50) NOT NULL,
-    UNIQUE(user_id, name)
+    type VARCHAR(20) NOT NULL DEFAULT 'transaction',
+    UNIQUE(user_id, name, type)
 );
 
 -- 3. TRANSACTIONS TABLE

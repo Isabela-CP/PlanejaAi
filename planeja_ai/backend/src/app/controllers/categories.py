@@ -20,7 +20,11 @@ ALLOWED_ICONS = {
 @categories_bp.route('', methods=['GET'])
 @login_required
 def list_categories():
-    cats = Category.query.filter_by(user_id=request.user_id).order_by(Category.name).all()
+    cat_type = request.args.get('type', 'transaction').strip()
+    if cat_type not in ['transaction', 'goal']:
+        return jsonify({'error': 'Parâmetro type inválido. Deve ser transaction ou goal.'}), 400
+
+    cats = Category.query.filter_by(user_id=request.user_id, type=cat_type).order_by(Category.name).all()
     return jsonify([c.to_dict() for c in cats]), 200
 
 
@@ -31,6 +35,7 @@ def create_category():
     name = (data or {}).get('name', '').strip()
     color_hex = (data or {}).get('colorHex', '').strip()
     icon_name = (data or {}).get('iconName', '').strip()
+    cat_type = (data or {}).get('type', 'transaction').strip()
 
     if not name or not color_hex or not icon_name:
         return jsonify({'error': 'Campos obrigatórios: name, colorHex, iconName'}), 400
@@ -38,12 +43,14 @@ def create_category():
         return jsonify({'error': 'colorHex inválido. Use o formato #RRGGBB'}), 400
     if icon_name not in ALLOWED_ICONS:
         return jsonify({'error': f'iconName inválido: {icon_name}'}), 400
+    if cat_type not in ['transaction', 'goal']:
+        return jsonify({'error': 'Campo type inválido. Deve ser transaction ou goal.'}), 400
 
-    exists = Category.query.filter_by(user_id=request.user_id, name=name).first()
+    exists = Category.query.filter_by(user_id=request.user_id, name=name, type=cat_type).first()
     if exists:
-        return jsonify({'error': 'Já existe uma categoria com esse nome'}), 409
+        return jsonify({'error': 'Já existe uma categoria com esse nome para este tipo'}), 409
 
-    cat = Category(user_id=request.user_id, name=name, color_hex=color_hex, icon_name=icon_name)
+    cat = Category(user_id=request.user_id, name=name, color_hex=color_hex, icon_name=icon_name, type=cat_type)
     db.session.add(cat)
     db.session.commit()
     return jsonify(cat.to_dict()), 201
@@ -69,10 +76,11 @@ def update_category(category_id):
     duplicate = Category.query.filter(
         Category.user_id == request.user_id,
         Category.name == name,
+        Category.type == cat.type,
         Category.id != category_id
     ).first()
     if duplicate:
-        return jsonify({'error': 'Já existe uma categoria com esse nome'}), 409
+        return jsonify({'error': 'Já existe uma categoria com esse nome para este tipo'}), 409
 
     cat.name = name
     cat.color_hex = color_hex
