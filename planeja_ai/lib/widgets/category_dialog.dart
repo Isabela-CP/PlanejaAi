@@ -46,7 +46,14 @@ const _kIcons = <String, IconData>{
 class CategoryDialog extends StatefulWidget {
   final AppCategory? editing;
   final String? initialName;
-  const CategoryDialog({Key? key, this.editing, this.initialName}) : super(key: key);
+  final String type;
+
+  const CategoryDialog({
+    Key? key,
+    this.editing,
+    this.initialName,
+    this.type = 'transaction',
+  }) : super(key: key);
 
   @override
   State<CategoryDialog> createState() => _CategoryDialogState();
@@ -95,6 +102,7 @@ class _CategoryDialogState extends State<CategoryDialog> {
       name: name,
       colorHex: _colorToHex(_selectedColor),
       iconName: _selectedIcon,
+      type: widget.type,
     );
     try {
       if (widget.editing == null) {

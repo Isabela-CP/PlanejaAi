@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS goals (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
+    custom_category VARCHAR(255),
     name VARCHAR(255) NOT NULL,
     target_value NUMERIC(15, 2) NOT NULL CHECK (target_value > 0),
     current_value NUMERIC(15, 2) NOT NULL DEFAULT 0.00 CHECK (current_value >= 0),

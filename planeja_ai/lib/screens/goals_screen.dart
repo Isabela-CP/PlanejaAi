@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
 import '../core/models/goal.dart';
 import '../widgets/goal_card.dart';
 import '../widgets/goal_form.dart';
+import '../providers/finance_provider.dart';
 
 class GoalsScreen extends StatefulWidget {
   const GoalsScreen({Key? key}) : super(key: key);
@@ -14,32 +16,14 @@ class GoalsScreen extends StatefulWidget {
 class _GoalsScreenState extends State<GoalsScreen> {
   bool _showForm = false;
 
-  final List<Goal> _goals = [
-    Goal(
-      id: '1',
-      name: 'Fundo de Emergência',
-      amount: 10000,
-      currentAmount: 6500,
-      deadline: DateTime(2024, 12, 31),
-      category: 'Emergência',
-    ),
-    Goal(
-      id: '2',
-      name: 'Viagem para Europa',
-      amount: 5000,
-      currentAmount: 2100,
-      deadline: DateTime(2024, 8, 15),
-      category: 'Viagem',
-    ),
-    Goal(
-      id: '3',
-      name: 'Notebook Novo',
-      amount: 1500,
-      currentAmount: 1200,
-      deadline: DateTime(2024, 4, 30),
-      category: 'Tecnologia',
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<FinanceProvider>().fetchGoals();
+      context.read<FinanceProvider>().fetchCategories(type: 'goal');
+    });
+  }
 
   void _toggleForm() {
     setState(() {
@@ -49,15 +33,25 @@ class _GoalsScreenState extends State<GoalsScreen> {
 
   void _handleAddGoal(Goal newGoal) {
     setState(() {
-      _goals.add(newGoal);
       _showForm = false;
     });
   }
 
-  void _handleDeleteGoal(String id) {
-    setState(() {
-      _goals.removeWhere((goal) => goal.id == id);
-    });
+  Future<void> _handleDeleteGoal(String id) async {
+    try {
+      await context.read<FinanceProvider>().deleteGoal(id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Meta removida com sucesso!'), backgroundColor: Colors.green),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao remover: ${e.toString().replaceFirst('Exception: ', '')}'), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   @override
@@ -96,9 +90,20 @@ class _GoalsScreenState extends State<GoalsScreen> {
                .fade(duration: 300.ms)
                .slideY(begin: -0.1, end: 0, duration: 300.ms, curve: Curves.easeOut),
 
-            Expanded(
-              child: _goals.isEmpty
-                  ? Center(
+            Consumer<FinanceProvider>(
+              builder: (context, financeProvider, child) {
+                if (financeProvider.isLoadingGoals) {
+                  return const Expanded(
+                    child: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                }
+
+                final goals = financeProvider.goals;
+                if (goals.isEmpty) {
+                  return Expanded(
+                    child: Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -115,31 +120,37 @@ class _GoalsScreenState extends State<GoalsScreen> {
                           ),
                         ],
                       ).animate().fade(duration: 400.ms).scale(begin: const Offset(0.9, 0.9)),
-                    )
-                  : LayoutBuilder(
-                      builder: (context, constraints) {
-                        int crossAxisCount = constraints.maxWidth > 800 ? 3 : (constraints.maxWidth > 500 ? 2 : 1);
-                        
-                        return GridView.builder(
-                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: crossAxisCount,
-                            crossAxisSpacing: 16,
-                            mainAxisSpacing: 16,
-                            mainAxisExtent: 310, 
-                          ),
-                          itemCount: _goals.length,
-                          itemBuilder: (context, index) {
-                            return GoalCard(
-                              goal: _goals[index],
-                              onDelete: () => _handleDeleteGoal(_goals[index].id),
-                            )
-                            .animate()
-                            .fade(duration: 400.ms, delay: (50 * index).ms)
-                            .slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut);
-                          },
-                        );
-                      },
                     ),
+                  );
+                }
+
+                return Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      int crossAxisCount = constraints.maxWidth > 800 ? 3 : (constraints.maxWidth > 500 ? 2 : 1);
+                      
+                      return GridView.builder(
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: crossAxisCount,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                          mainAxisExtent: 375, 
+                        ),
+                        itemCount: goals.length,
+                        itemBuilder: (context, index) {
+                          return GoalCard(
+                            goal: goals[index],
+                            onDelete: () => _handleDeleteGoal(goals[index].id),
+                          )
+                          .animate()
+                          .fade(duration: 400.ms, delay: (50 * index).ms)
+                          .slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut);
+                        },
+                      );
+                    },
+                  ),
+                );
+              },
             ),
           ],
         ),

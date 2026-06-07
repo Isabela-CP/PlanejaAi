@@ -6,6 +6,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../core/models/category.dart';
 import '../core/models/transaction.dart';
 import '../core/models/budget.dart';
+import '../core/models/goal.dart';
 
 class FinanceProvider extends ChangeNotifier {
   final _storage = const FlutterSecureStorage();
@@ -14,9 +15,11 @@ class FinanceProvider extends ChangeNotifier {
   List<AppCategory> _goalCategories = [];
   List<Transaction> _transactions = [];
   List<Budget> _budgets = [];
+  List<Goal> _goals = [];
   bool _isLoadingCategories = false;
   bool _isLoadingTransactions = false;
   bool _isLoadingBudgets = false;
+  bool _isLoadingGoals = false;
 
   double _balance = 0.0;
   double _income = 0.0;
@@ -27,9 +30,11 @@ class FinanceProvider extends ChangeNotifier {
   List<AppCategory> get categories => transactionCategories;
   List<Transaction> get transactions => List.unmodifiable(_transactions);
   List<Budget> get budgets => List.unmodifiable(_budgets);
+  List<Goal> get goals => List.unmodifiable(_goals);
   bool get isLoadingCategories => _isLoadingCategories;
   bool get isLoadingTransactions => _isLoadingTransactions;
   bool get isLoadingBudgets => _isLoadingBudgets;
+  bool get isLoadingGoals => _isLoadingGoals;
 
   double get balance => _balance;
   double get income => _income;
@@ -314,6 +319,94 @@ class FinanceProvider extends ChangeNotifier {
     } else {
       final msg = (json.decode(response.body) as Map<String, dynamic>)['error'] ??
           'Erro ao remover orçamento';
+      throw Exception(msg);
+    }
+  }
+
+  Future<void> fetchGoals() async {
+    _isLoadingGoals = true;
+    notifyListeners();
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/goals'),
+        headers: await _headers,
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body) as List;
+        _goals = data
+            .map((e) => Goal.fromJson(e as Map<String, dynamic>))
+            .toList();
+      }
+    } catch (e) {
+      debugPrint('fetchGoals error: $e');
+    } finally {
+      _isLoadingGoals = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> addGoal(Goal goal) async {
+    final response = await http.post(
+      Uri.parse('$_baseUrl/goals'),
+      headers: await _headers,
+      body: json.encode(goal.toJson()),
+    );
+    if (response.statusCode == 201) {
+      final newGoal = Goal.fromJson(json.decode(response.body) as Map<String, dynamic>);
+      _goals.add(newGoal);
+      notifyListeners();
+    } else {
+      final msg = (json.decode(response.body) as Map<String, dynamic>)['error'] ??
+          'Erro ao criar meta';
+      throw Exception(msg);
+    }
+  }
+
+  Future<void> updateGoal(
+    String id, {
+    String? name,
+    double? targetValue,
+    double? currentValue,
+    DateTime? deadline,
+    String? categoryId,
+  }) async {
+    final body = {
+      if (name != null) 'name': name,
+      if (targetValue != null) 'targetValue': targetValue,
+      if (currentValue != null) 'currentValue': currentValue,
+      if (deadline != null) 'deadline': deadline.toIso8601String().split('T')[0],
+      if (categoryId != null) 'categoryId': categoryId == "" ? "" : categoryId,
+    };
+    final response = await http.put(
+      Uri.parse('$_baseUrl/goals/$id'),
+      headers: await _headers,
+      body: json.encode(body),
+    );
+    if (response.statusCode == 200) {
+      final updatedGoal = Goal.fromJson(json.decode(response.body) as Map<String, dynamic>);
+      final idx = _goals.indexWhere((g) => g.id == id);
+      if (idx != -1) {
+        _goals[idx] = updatedGoal;
+        notifyListeners();
+      }
+    } else {
+      final msg = (json.decode(response.body) as Map<String, dynamic>)['error'] ??
+          'Erro ao atualizar meta';
+      throw Exception(msg);
+    }
+  }
+
+  Future<void> deleteGoal(String id) async {
+    final response = await http.delete(
+      Uri.parse('$_baseUrl/goals/$id'),
+      headers: await _headers,
+    );
+    if (response.statusCode == 200) {
+      _goals.removeWhere((g) => g.id == id);
+      notifyListeners();
+    } else {
+      final msg = (json.decode(response.body) as Map<String, dynamic>)['error'] ??
+          'Erro ao remover meta';
       throw Exception(msg);
     }
   }

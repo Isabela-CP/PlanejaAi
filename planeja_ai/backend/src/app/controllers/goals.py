@@ -70,6 +70,7 @@ def create_goal():
     target_value = data.get('targetValue')
     deadline_str = data.get('deadline')
     category_id = data.get('categoryId')
+    custom_category = data.get('customCategory')
 
     if not name or name.strip() == "":
         return jsonify({'error': 'Nome da meta é obrigatório'}), 400
@@ -89,10 +90,12 @@ def create_goal():
             return jsonify({'error': 'Categoria não encontrada'}), 404
         if category.type != 'goal':
             return jsonify({'error': 'A categoria fornecida deve ser do tipo goal'}), 400
+        custom_category = None
 
     new_goal = Goal(
         user_id=request.user_id,
         category_id=category_id,
+        custom_category=custom_category,
         name=name.strip(),
         target_value=target_val,
         current_value=0.0,
@@ -118,6 +121,7 @@ def update_goal(goal_id):
     current_value = data.get('currentValue')
     deadline_str = data.get('deadline')
     category_id = data.get('categoryId')
+    custom_category = data.get('customCategory')
 
     if name is not None:
         if not name.strip():
@@ -152,6 +156,12 @@ def update_goal(goal_id):
             if category.type != 'goal':
                 return jsonify({'error': 'A categoria fornecida deve ser do tipo goal'}), 400
             goal.category_id = category_id
+            goal.custom_category = None
+
+    if 'customCategory' in data:
+        goal.custom_category = custom_category
+        if custom_category:
+            goal.category_id = None
 
     # Atualizar o status antes de salvar e retornar
     check_and_update_goal_statuses([goal])

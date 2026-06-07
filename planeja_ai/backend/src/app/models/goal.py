@@ -7,6 +7,7 @@ class Goal(db.Model):
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id = db.Column(db.String(36), db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     category_id = db.Column(db.String(36), db.ForeignKey('categories.id', ondelete='SET NULL'), nullable=True)
+    custom_category = db.Column(db.String(255), nullable=True)
     name = db.Column(db.String(255), nullable=False)
     target_value = db.Column(db.Numeric(15, 2), nullable=False)
     current_value = db.Column(db.Numeric(15, 2), nullable=False, default=0.0)
@@ -20,6 +21,7 @@ class Goal(db.Model):
             'id': self.id,
             'userId': self.user_id,
             'categoryId': self.category_id,
+            'customCategory': self.custom_category,
             'name': self.name,
             'targetValue': float(self.target_value) if self.target_value is not None else 0.0,
             'currentValue': float(self.current_value) if self.current_value is not None else 0.0,
