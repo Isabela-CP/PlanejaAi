@@ -1,4 +1,5 @@
 import 'category.dart';
+import 'transaction.dart';
 
 class Budget {
   final String id;
@@ -28,33 +29,87 @@ class Budget {
 
   double get monthlyRemaining => monthlyLimit - spent;
 
+  DateTime get cycleStartDate {
+    final now = DateTime.now();
+    if (now.day < resetDay) {
+      int prevMonth = now.month == 1 ? 12 : now.month - 1;
+      int prevYear = now.month == 1 ? now.year - 1 : now.year;
+      return DateTime(prevYear, prevMonth, resetDay);
+    } else {
+      return DateTime(now.year, now.month, resetDay);
+    }
+  }
+
+  DateTime get cycleEndDate {
+    final start = cycleStartDate;
+    int nextMonth = start.month == 12 ? 1 : start.month + 1;
+    int nextYear = start.month == 12 ? start.year + 1 : start.year;
+    return DateTime(nextYear, nextMonth, resetDay).subtract(const Duration(seconds: 1));
+  }
+
   int get daysLeftInPeriod {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    
-    DateTime targetEnd;
-    if (now.day < resetDay) {
-      // O ciclo termina no dia resetDay - 1 deste mês
-      targetEnd = DateTime(now.year, now.month, resetDay - 1);
-    } else {
-      // O ciclo termina no dia resetDay - 1 do próximo mês
-      int nextMonth = now.month == 12 ? 1 : now.month + 1;
-      int nextYear = now.month == 12 ? now.year + 1 : now.year;
-      targetEnd = DateTime(nextYear, nextMonth, resetDay - 1);
-    }
-    
-    final diff = targetEnd.difference(today).inDays;
+    final end = cycleEndDate;
+    final diff = end.difference(today).inDays;
     return diff < 0 ? 0 : diff;
   }
 
   // Compatibilidade com o layout existente
   int get daysLeftInMonth => daysLeftInPeriod;
 
-  double get weeklyRemaining {
-    final daysLeft = daysLeftInPeriod;
-    final weeksLeft = daysLeft / 7.0;
-    if (weeksLeft <= 0) return monthlyRemaining;
-    return monthlyRemaining / weeksLeft;
+  Map<String, double> getWeeklyDetails(List<Transaction> allTransactions) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final start = cycleStartDate;
+    final end = cycleEndDate;
+
+    // Filtrar transações de despesa da categoria deste orçamento que estejam no ciclo atual
+    final categoryTxs = allTransactions.where((tx) {
+      if (tx.category?.id != categoryId) return false;
+      if (tx.type != 'expense') return false;
+      
+      final txDate = tx.date;
+      return (txDate.isAfter(start) || txDate.isAtSameMomentAs(start)) &&
+             (txDate.isBefore(end) || txDate.isAtSameMomentAs(end));
+    }).toList();
+
+    // Duração total do ciclo em dias
+    final totalDays = end.difference(start).inDays + 1;
+    final totalWeeks = totalDays / 7.0;
+
+    // Dias transcorridos desde o início do ciclo
+    final daysSinceStart = today.difference(start).inDays;
+    final currentWeekIndex = (daysSinceStart / 7).floor();
+
+    // Início da semana corrente
+    final weekStart = start.add(Duration(days: currentWeekIndex * 7));
+
+    double spentBefore = 0.0;
+    double spentCurrent = 0.0;
+
+    for (final tx in categoryTxs) {
+      if (tx.date.isBefore(weekStart)) {
+        spentBefore += tx.amount;
+      } else {
+        spentCurrent += tx.amount;
+      }
+    }
+
+    final weeksRemaining = totalWeeks - currentWeekIndex;
+    final remainingLimitBefore = monthlyLimit - spentBefore;
+    
+    // Limite disponível para esta semana
+    final weeklyLimit = weeksRemaining > 0 ? remainingLimitBefore / weeksRemaining : remainingLimitBefore;
+    
+    // Saldo semanal restante (pode ser negativo se gastou a mais nesta semana)
+    final weeklyRemaining = weeklyLimit - spentCurrent;
+
+    return {
+      'weeklyLimit': weeklyLimit,
+      'spentCurrentWeek': spentCurrent,
+      'weeklyRemaining': weeklyRemaining,
+    };
   }
 
   String get statusLabel {

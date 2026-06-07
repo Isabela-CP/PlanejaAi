@@ -197,6 +197,7 @@ class FinanceProvider extends ChangeNotifier {
       _transactions.insert(0, newTx);
       _recalculateBalances();
       notifyListeners();
+      fetchBudgets();
     } else {
       final msg = (json.decode(response.body) as Map<String, dynamic>)['error'] ??
           'Erro ao criar transação';
@@ -213,6 +214,7 @@ class FinanceProvider extends ChangeNotifier {
       _transactions.removeWhere((tx) => tx.id == id);
       _recalculateBalances();
       notifyListeners();
+      fetchBudgets();
     } else {
       final msg = (json.decode(response.body) as Map<String, dynamic>)['error'] ??
           'Erro ao remover transação';

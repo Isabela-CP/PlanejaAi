@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:provider/provider.dart';
 import '../core/models/budget.dart';
+import '../providers/finance_provider.dart';
 
 const _kIcons = <String, IconData>{
   'utensils': LucideIcons.utensils,
@@ -48,6 +50,11 @@ class BudgetCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currencyFormatter = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+    final financeProvider = Provider.of<FinanceProvider>(context);
+
+    // Calcular limite e saldo semanal dinâmico em tempo real
+    final weeklyDetails = budget.getWeeklyDetails(financeProvider.transactions);
+    final weeklyRemaining = weeklyDetails['weeklyRemaining'] ?? 0.0;
     
     final ratio = budget.spent / budget.monthlyLimit;
     final isDanger = ratio >= 1.0;
@@ -236,16 +243,20 @@ class BudgetCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        currencyFormatter.format(budget.weeklyRemaining),
+                        currencyFormatter.format(weeklyRemaining),
                         style: TextStyle(
                           fontSize: 15, 
                           fontWeight: FontWeight.bold,
-                          color: budget.weeklyRemaining >= 0 ? Colors.green : theme.colorScheme.error,
+                          color: weeklyRemaining >= 0 ? Colors.green : theme.colorScheme.error,
                         ),
                       ),
                       Text(
-                        'disponível por semana',
-                        style: TextStyle(color: mutedColor, fontSize: 10),
+                        weeklyRemaining >= 0 ? 'disponível esta semana' : 'excedido esta semana',
+                        style: TextStyle(
+                          color: weeklyRemaining >= 0 ? mutedColor : theme.colorScheme.error.withOpacity(0.8),
+                          fontSize: 10,
+                          fontWeight: weeklyRemaining >= 0 ? FontWeight.normal : FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
