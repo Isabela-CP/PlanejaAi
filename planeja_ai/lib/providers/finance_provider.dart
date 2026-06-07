@@ -21,6 +21,11 @@ class FinanceProvider extends ChangeNotifier {
   bool _isLoadingBudgets = false;
   bool _isLoadingGoals = false;
 
+  Map<String, dynamic>? _reportSummary;
+  List<dynamic> _reportCategoryBreakdown = [];
+  List<dynamic> _reportBalanceEvolution = [];
+  bool _isLoadingReport = false;
+
   double _balance = 0.0;
   double _income = 0.0;
   double _expenses = 0.0;
@@ -35,6 +40,11 @@ class FinanceProvider extends ChangeNotifier {
   bool get isLoadingTransactions => _isLoadingTransactions;
   bool get isLoadingBudgets => _isLoadingBudgets;
   bool get isLoadingGoals => _isLoadingGoals;
+
+  Map<String, dynamic>? get reportSummary => _reportSummary;
+  List<dynamic> get reportCategoryBreakdown => _reportCategoryBreakdown;
+  List<dynamic> get reportBalanceEvolution => _reportBalanceEvolution;
+  bool get isLoadingReport => _isLoadingReport;
 
   double get balance => _balance;
   double get income => _income;
@@ -408,6 +418,59 @@ class FinanceProvider extends ChangeNotifier {
       final msg = (json.decode(response.body) as Map<String, dynamic>)['error'] ??
           'Erro ao remover meta';
       throw Exception(msg);
+    }
+  }
+
+  Future<void> fetchReport({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    _isLoadingReport = true;
+    notifyListeners();
+    try {
+      final startStr = "${startDate.year.toString().padLeft(4, '0')}-${startDate.month.toString().padLeft(2, '0')}-${startDate.day.toString().padLeft(2, '0')}";
+      final endStr = "${endDate.year.toString().padLeft(4, '0')}-${endDate.month.toString().padLeft(2, '0')}-${endDate.day.toString().padLeft(2, '0')}";
+      
+      final headers = await _headers;
+
+      final results = await Future.wait([
+        http.get(
+          Uri.parse('$_baseUrl/relatorios/resumo?start_date=$startStr&end_date=$endStr'),
+          headers: headers,
+        ),
+        http.get(
+          Uri.parse('$_baseUrl/relatorios/por-categoria?start_date=$startStr&end_date=$endStr'),
+          headers: headers,
+        ),
+        http.get(
+          Uri.parse('$_baseUrl/relatorios/evolucao-saldo?start_date=$startStr&end_date=$endStr'),
+          headers: headers,
+        ),
+      ]);
+
+      if (results[0].statusCode == 200) {
+        _reportSummary = json.decode(results[0].body) as Map<String, dynamic>;
+      } else {
+        debugPrint('fetchReport resumo error: ${results[0].statusCode}');
+      }
+      
+      if (results[1].statusCode == 200) {
+        _reportCategoryBreakdown = json.decode(results[1].body) as List<dynamic>;
+      } else {
+        debugPrint('fetchReport por-categoria error: ${results[1].statusCode}');
+      }
+      
+      if (results[2].statusCode == 200) {
+        _reportBalanceEvolution = json.decode(results[2].body) as List<dynamic>;
+      } else {
+        debugPrint('fetchReport evolucao-saldo error: ${results[2].statusCode}');
+      }
+    } catch (e) {
+      debugPrint('fetchReport error: $e');
+      rethrow;
+    } finally {
+      _isLoadingReport = false;
+      notifyListeners();
     }
   }
 }
