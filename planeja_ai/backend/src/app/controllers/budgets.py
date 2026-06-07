@@ -78,6 +78,37 @@ def list_budgets():
         
     return jsonify(result), 200
 
+def parse_and_validate_limit(limit_value):
+    if limit_value is None:
+        return None, 'Campos obrigatórios: categoryId, monthlyLimit'
+    try:
+        limit_val = float(limit_value)
+        if limit_val < 0:
+            return None, 'O limite deve ser maior ou igual a zero'
+        return limit_val, None
+    except (ValueError, TypeError):
+        return None, 'Valor de monthlyLimit inválido'
+
+def parse_and_validate_reset_day(reset_day):
+    try:
+        reset_day_val = int(reset_day)
+        if reset_day_val < 1 or reset_day_val > 31:
+            return None, 'O resetDay deve ser entre 1 e 31'
+        return reset_day_val, None
+    except (ValueError, TypeError):
+        return None, 'Valor de resetDay inválido'
+
+def parse_and_validate_date(date_str):
+    if not date_str:
+        today = date.today()
+        return date(today.year, today.month, 1), None
+    try:
+        clean_date = date_str.split('T')[0]
+        temp_date = datetime.strptime(clean_date, '%Y-%m-%d').date()
+        return date(temp_date.year, temp_date.month, 1), None
+    except Exception:
+        return None, 'Formato de data inválido. Use AAAA-MM-DD'
+
 @budgets_bp.route('', methods=['POST'])
 @login_required
 def create_budget():
@@ -87,33 +118,20 @@ def create_budget():
     date_str = data.get('date')
     reset_day = data.get('resetDay', 1)
 
-    if not category_id or limit_value is None:
+    if not category_id:
         return jsonify({'error': 'Campos obrigatórios: categoryId, monthlyLimit'}), 400
 
-    try:
-        limit_val = float(limit_value)
-        if limit_val < 0:
-            return jsonify({'error': 'O limite deve ser maior ou igual a zero'}), 400
-    except (ValueError, TypeError):
-        return jsonify({'error': 'Valor de monthlyLimit inválido'}), 400
+    limit_val, err = parse_and_validate_limit(limit_value)
+    if err:
+        return jsonify({'error': err}), 400
 
-    try:
-        reset_day = int(reset_day)
-        if reset_day < 1 or reset_day > 31:
-            return jsonify({'error': 'O resetDay deve ser entre 1 e 31'}), 400
-    except (ValueError, TypeError):
-        return jsonify({'error': 'Valor de resetDay inválido'}), 400
+    reset_day_val, err = parse_and_validate_reset_day(reset_day)
+    if err:
+        return jsonify({'error': err}), 400
 
-    if date_str:
-        try:
-            clean_date = date_str.split('T')[0]
-            temp_date = datetime.strptime(clean_date, '%Y-%m-%d').date()
-            month_year = date(temp_date.year, temp_date.month, 1)
-        except Exception:
-            return jsonify({'error': 'Formato de data inválido. Use AAAA-MM-DD'}), 400
-    else:
-        today = date.today()
-        month_year = date(today.year, today.month, 1)
+    month_year, err = parse_and_validate_date(date_str)
+    if err:
+        return jsonify({'error': err}), 400
 
     # Validar se a categoria existe
     category = Category.query.filter_by(id=category_id, user_id=request.user_id).first()
@@ -132,14 +150,14 @@ def create_budget():
         category_id=category_id,
         limit_value=limit_val,
         month_year=month_year,
-        reset_day=reset_day
+        reset_day=reset_day_val
     )
 
     db.session.add(new_budget)
     db.session.commit()
 
     b_dict = new_budget.to_dict()
-    b_dict['spent'] = calculate_budget_spent(request.user_id, category_id, month_year, reset_day)
+    b_dict['spent'] = calculate_budget_spent(request.user_id, category_id, month_year, reset_day_val)
 
     return jsonify(b_dict), 201
 
