@@ -41,7 +41,6 @@ def check_and_update_goal_statuses(goals):
     today = date.today()
     updated = False
     for g in goals:
-        new_status = g.status
         if g.current_value >= g.target_value:
             new_status = 'completed'
         elif today > g.deadline:
@@ -108,6 +107,56 @@ def create_goal():
 
     return jsonify(new_goal.to_dict()), 201
 
+def _update_goal_fields(goal, data):
+    name = data.get('name')
+    if name is not None:
+        if not name.strip():
+            return 'Nome da meta não pode ser vazio'
+        goal.name = name.strip()
+
+    target_value = data.get('targetValue')
+    if target_value is not None:
+        target_val, err = parse_and_validate_target(target_value)
+        if err:
+            return err
+        goal.target_value = target_val
+
+    current_value = data.get('currentValue')
+    if current_value is not None:
+        current_val, err = parse_and_validate_current(current_value)
+        if err:
+            return err
+        goal.current_value = current_val
+
+    deadline_str = data.get('deadline')
+    if deadline_str is not None:
+        deadline_val, err = parse_and_validate_date(deadline_str)
+        if err:
+            return err
+        goal.deadline = deadline_val
+    return None
+
+def _update_goal_categories(goal, data, user_id):
+    category_id = data.get('categoryId')
+    if category_id is not None:
+        if category_id == "":
+            goal.category_id = None
+        else:
+            category = Category.query.filter_by(id=category_id, user_id=user_id).first()
+            if not category:
+                return 'Categoria não encontrada'
+            if category.type != 'goal':
+                return 'A categoria fornecida deve ser do tipo goal'
+            goal.category_id = category_id
+            goal.custom_category = None
+
+    if 'customCategory' in data:
+        cust = data.get('customCategory')
+        goal.custom_category = cust
+        if cust:
+            goal.category_id = None
+    return None
+
 @goals_bp.route('/<string:goal_id>', methods=['PUT'])
 @login_required
 def update_goal(goal_id):
@@ -116,52 +165,15 @@ def update_goal(goal_id):
         return jsonify({'error': 'Meta não encontrada'}), 404
 
     data = request.get_json() or {}
-    name = data.get('name')
-    target_value = data.get('targetValue')
-    current_value = data.get('currentValue')
-    deadline_str = data.get('deadline')
-    category_id = data.get('categoryId')
-    custom_category = data.get('customCategory')
 
-    if name is not None:
-        if not name.strip():
-            return jsonify({'error': 'Nome da meta não pode ser vazio'}), 400
-        goal.name = name.strip()
+    err = _update_goal_fields(goal, data)
+    if err:
+        return jsonify({'error': err}), 400
 
-    if target_value is not None:
-        target_val, err = parse_and_validate_target(target_value)
-        if err:
-            return jsonify({'error': err}), 400
-        goal.target_value = target_val
-
-    if current_value is not None:
-        current_val, err = parse_and_validate_current(current_value)
-        if err:
-            return jsonify({'error': err}), 400
-        goal.current_value = current_val
-
-    if deadline_str is not None:
-        deadline_val, err = parse_and_validate_date(deadline_str)
-        if err:
-            return jsonify({'error': err}), 400
-        goal.deadline = deadline_val
-
-    if category_id is not None:
-        if category_id == "":
-            goal.category_id = None
-        else:
-            category = Category.query.filter_by(id=category_id, user_id=request.user_id).first()
-            if not category:
-                return jsonify({'error': 'Categoria não encontrada'}), 404
-            if category.type != 'goal':
-                return jsonify({'error': 'A categoria fornecida deve ser do tipo goal'}), 400
-            goal.category_id = category_id
-            goal.custom_category = None
-
-    if 'customCategory' in data:
-        goal.custom_category = custom_category
-        if custom_category:
-            goal.category_id = None
+    err = _update_goal_categories(goal, data, request.user_id)
+    if err:
+        status_code = 404 if err == 'Categoria não encontrada' else 400
+        return jsonify({'error': err}), status_code
 
     # Atualizar o status antes de salvar e retornar
     check_and_update_goal_statuses([goal])
