@@ -7,6 +7,8 @@ from src.config.database import db
 
 goals_bp = Blueprint('goals', __name__, url_prefix='/api/goals')
 
+CATEGORY_NOT_FOUND_MSG = 'Categoria não encontrada'
+
 def parse_and_validate_target(value):
     if value is None:
         return None, 'Campos obrigatórios: name, targetValue, deadline'
@@ -86,7 +88,7 @@ def create_goal():
     if category_id:
         category = Category.query.filter_by(id=category_id, user_id=request.user_id).first()
         if not category:
-            return jsonify({'error': 'Categoria não encontrada'}), 404
+            return jsonify({'error': CATEGORY_NOT_FOUND_MSG}), 404
         if category.type != 'goal':
             return jsonify({'error': 'A categoria fornecida deve ser do tipo goal'}), 400
         custom_category = None
@@ -144,7 +146,7 @@ def _update_goal_categories(goal, data, user_id):
         else:
             category = Category.query.filter_by(id=category_id, user_id=user_id).first()
             if not category:
-                return 'Categoria não encontrada'
+                return CATEGORY_NOT_FOUND_MSG
             if category.type != 'goal':
                 return 'A categoria fornecida deve ser do tipo goal'
             goal.category_id = category_id
@@ -172,7 +174,7 @@ def update_goal(goal_id):
 
     err = _update_goal_categories(goal, data, request.user_id)
     if err:
-        status_code = 404 if err == 'Categoria não encontrada' else 400
+        status_code = 404 if err == CATEGORY_NOT_FOUND_MSG else 400
         return jsonify({'error': err}), status_code
 
     # Atualizar o status antes de salvar e retornar
