@@ -23,11 +23,13 @@ def create_app() -> Flask:
         from src.app.controllers.transactions import transactions_bp
         from src.app.controllers.budgets import budgets_bp
         from src.app.controllers.goals import goals_bp
+        from src.app.controllers.relatorios import relatorios_bp
         app.register_blueprint(auth_bp)
         app.register_blueprint(categories_bp)
         app.register_blueprint(transactions_bp)
         app.register_blueprint(budgets_bp)
         app.register_blueprint(goals_bp)
+        app.register_blueprint(relatorios_bp)
     
     @app.route("/")
     def index() -> dict:
