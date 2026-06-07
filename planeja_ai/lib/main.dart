@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/foundation.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'core/theme.dart';
 import 'core/router.dart';
 import 'providers/auth_provider.dart';
@@ -10,6 +11,8 @@ import 'providers/finance_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('pt_BR', null);
+
   try {
     await dotenv.load(fileName: ".env");
   } catch (e) {

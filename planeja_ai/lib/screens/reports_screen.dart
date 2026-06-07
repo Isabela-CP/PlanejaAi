@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../providers/finance_provider.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -32,22 +34,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
     {'value': 'expense', 'label': 'Somente Despesas'},
   ];
 
-  // Dados mock
-  final _mockSummary = {
-    'totalIncome': 16200.0,
-    'totalExpenses': 9720.0,
-    'netIncome': 6480.0,
-    'transactionCount': 45,
-  };
-
-  final _mockCategoryBreakdown = [
-    {'category': 'Alimentação', 'amount': 2450.0, 'percentage': 25.2},
-    {'category': 'Transporte', 'amount': 1890.0, 'percentage': 19.4},
-    {'category': 'Contas', 'amount': 2850.0, 'percentage': 29.3},
-    {'category': 'Entretenimento', 'amount': 960.0, 'percentage': 9.9},
-    {'category': 'Compras', 'amount': 1570.0, 'percentage': 16.2},
-  ];
-
   Future<void> _pickDate({required bool isStart}) async {
     final now = DateTime.now();
     final initial = isStart
@@ -70,7 +56,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     }
   }
 
-  void _generateReport() {
+  Future<void> _generateReport() async {
     if (_startDate == null || _endDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -92,10 +78,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
     setState(() => _isGenerating = true);
 
-    Future.delayed(const Duration(milliseconds: 1500), () {
+    try {
+      await context.read<FinanceProvider>().fetchReportsData(
+        startDate: _startDate,
+        endDate: _endDate,
+      );
+
       if (mounted) {
         setState(() {
-          _isGenerating = false;
           _hasReport = true;
         });
         ScaffoldMessenger.of(context).showSnackBar(
@@ -105,7 +95,20 @@ class _ReportsScreenState extends State<ReportsScreen> {
           ),
         );
       }
-    });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao gerar relatório: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isGenerating = false);
+      }
+    }
   }
 
   void _exportReport(String format) {
@@ -147,7 +150,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
             // Data início, Data fim, Tipo e Botão
             LayoutBuilder(builder: (context, constraints) {
-              final isWide = constraints.maxWidth > 600;
+              final isWide = constraints.maxWidth > 900;
               Widget startDateField = _buildDateField(
                 label: 'Data de Início',
                 value: _startDate,
@@ -324,6 +327,16 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   Widget _buildReportResults(BuildContext context) {
     final theme = Theme.of(context);
+    final provider = context.watch<FinanceProvider>();
+    
+    final summaryData = provider.reportSummary ?? {};
+    final categoryBreakdown = provider.reportCategoryBreakdown ?? [];
+    
+    final totalIncome = (summaryData['receita'] as num?)?.toDouble() ?? 0.0;
+    final totalExpenses = (summaryData['despesa'] as num?)?.toDouble() ?? 0.0;
+    final netIncome = (summaryData['liquido'] as num?)?.toDouble() ?? 0.0;
+    final transactionCount = (summaryData['quantidade_transacoes'] as num?)?.toInt() ?? 0;
+
     final typeLabel = _transactionType == 'all'
         ? 'todas as transações'
         : _transactionType == 'income' ? 'somente receitas' : 'somente despesas';
@@ -377,13 +390,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
             mainAxisSpacing: 16,
             childAspectRatio: constraints.maxWidth > 500 ? 2.0 : 3.0,
             children: [
-              _buildSummaryCard('Receita Total', _mockSummary['totalIncome'] as double,
+              _buildSummaryCard('Receita Total', totalIncome,
                   LucideIcons.trendingUp, const Color(0xFF10B981), 50),
-              _buildSummaryCard('Despesas Totais', _mockSummary['totalExpenses'] as double,
+              _buildSummaryCard('Despesas Totais', totalExpenses,
                   LucideIcons.trendingDown, const Color(0xFFEF4444), 100),
-              _buildSummaryCard('Renda Líquida', _mockSummary['netIncome'] as double,
+              _buildSummaryCard('Renda Líquida', netIncome,
                   LucideIcons.dollarSign, theme.colorScheme.primary, 150),
-              _buildSummaryCard('Transações', (_mockSummary['transactionCount'] as int).toDouble(),
+              _buildSummaryCard('Transações', transactionCount.toDouble(),
                   LucideIcons.fileText, theme.colorScheme.onSurface.withOpacity(0.7), 200,
                   isCount: true),
             ],
@@ -404,42 +417,48 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 Text('Despesas por Categoria',
                     style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 16),
-                ..._mockCategoryBreakdown.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final item = entry.value;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceVariant.withOpacity(0.4),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(item['category'] as String,
-                                  style: const TextStyle(fontWeight: FontWeight.w600)),
-                              Text('${item['percentage']}% do total',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: theme.colorScheme.onSurface.withOpacity(0.6),
-                                  )),
-                            ],
-                          ),
-                          Text(
-                            _formatCurrency.format(item['amount']),
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                    ).animate().fade(duration: 400.ms, delay: (50 * index).ms)
-                        .slideX(begin: 0.05, end: 0, duration: 400.ms, curve: Curves.easeOut),
-                  );
-                }),
+                if (categoryBreakdown.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24.0),
+                    child: Center(child: Text('Nenhuma despesa no período')),
+                  )
+                else
+                  ...categoryBreakdown.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final item = entry.value;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceVariant.withOpacity(0.4),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(item['category'] as String,
+                                    style: const TextStyle(fontWeight: FontWeight.w600)),
+                                Text('${(item['percentage'] as num).toStringAsFixed(1)}% do total',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                                    )),
+                              ],
+                            ),
+                            Text(
+                              _formatCurrency.format((item['amount'] as num).toDouble()),
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      ).animate().fade(duration: 400.ms, delay: (50 * index).ms)
+                          .slideX(begin: 0.05, end: 0, duration: 400.ms, curve: Curves.easeOut),
+                    );
+                  }),
               ],
             ),
           ),

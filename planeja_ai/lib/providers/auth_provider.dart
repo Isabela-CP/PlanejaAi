@@ -1,12 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../core/services/api_service.dart';
 
 class AuthProvider extends ChangeNotifier {
-  final _storage = const FlutterSecureStorage();
+  final ApiService _apiService = ApiService();
   
   bool _isAuthenticated = false;
   String? _username;
@@ -16,10 +15,6 @@ class AuthProvider extends ChangeNotifier {
   String? get username => _username;
   bool get isLoading => _isLoading;
 
-  String get _baseUrl {
-    return dotenv.env['API_BASE_URL'] ?? 'http://localhost:8000/api';
-  }
-
   AuthProvider() {
     tryAutoLogin();
   }
@@ -27,28 +22,24 @@ class AuthProvider extends ChangeNotifier {
   Future<void> tryAutoLogin() async {
     _setLoading(true);
     try {
-      final token = await _storage.read(key: 'jwt_token');
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('jwt_token');
       if (token == null) {
         _setLoading(false);
         return;
       }
 
       // Verify token by calling /me
-      final response = await http.get(
-        Uri.parse('$_baseUrl/auth/me'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
+      final response = await _apiService.get('/auth/me');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         _isAuthenticated = true;
         _username = data['name'];
+        notifyListeners();
       } else {
         // Token is invalid or expired
-        await _storage.delete(key: 'jwt_token');
+        await prefs.remove('jwt_token');
       }
     } catch (e) {
       // In case of network errors, silently fail auto-login
@@ -61,16 +52,16 @@ class AuthProvider extends ChangeNotifier {
   Future<void> login(String email, String password) async {
     _setLoading(true);
     try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/auth/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({'email': email, 'password': password}),
+      final response = await _apiService.post(
+        '/auth/login',
+        body: {'email': email, 'password': password},
       );
 
       final data = json.decode(response.body);
 
       if (response.statusCode == 200) {
-        await _storage.write(key: 'jwt_token', value: data['token']);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('jwt_token', data['token']);
         _isAuthenticated = true;
         _username = data['user']['name'];
         notifyListeners();
@@ -87,10 +78,9 @@ class AuthProvider extends ChangeNotifier {
   Future<void> signup(String email, String password, String name) async {
     _setLoading(true);
     try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/auth/register'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({'email': email, 'password': password, 'name': name}),
+      final response = await _apiService.post(
+        '/auth/register',
+        body: {'email': email, 'password': password, 'name': name},
       );
 
       final data = json.decode(response.body);
@@ -111,7 +101,8 @@ class AuthProvider extends ChangeNotifier {
   Future<void> logout() async {
     _setLoading(true);
     try {
-      await _storage.delete(key: 'jwt_token');
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('jwt_token');
       _isAuthenticated = false;
       _username = null;
       notifyListeners();

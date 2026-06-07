@@ -1,15 +1,13 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../core/models/category.dart';
 import '../core/models/transaction.dart';
 import '../core/models/budget.dart';
 import '../core/models/goal.dart';
+import '../core/services/api_service.dart';
 
 class FinanceProvider extends ChangeNotifier {
-  final _storage = const FlutterSecureStorage();
+  final ApiService _apiService = ApiService();
 
   List<AppCategory> _transactionCategories = [];
   List<AppCategory> _goalCategories = [];
@@ -24,6 +22,12 @@ class FinanceProvider extends ChangeNotifier {
   double _balance = 0.0;
   double _income = 0.0;
   double _expenses = 0.0;
+
+  // Relatórios State
+  Map<String, dynamic>? _reportSummary;
+  List<dynamic>? _reportCategoryBreakdown;
+  List<dynamic>? _reportEvolucaoSaldo;
+  bool _isLoadingReports = false;
 
   List<AppCategory> get transactionCategories => List.unmodifiable(_transactionCategories);
   List<AppCategory> get goalCategories => List.unmodifiable(_goalCategories);
@@ -40,25 +44,16 @@ class FinanceProvider extends ChangeNotifier {
   double get income => _income;
   double get expenses => _expenses;
 
-  String get _baseUrl =>
-      dotenv.env['API_BASE_URL'] ?? 'http://localhost:8000/api';
-
-  Future<Map<String, String>> get _headers async {
-    final token = await _storage.read(key: 'jwt_token');
-    return {
-      'Content-Type': 'application/json',
-      if (token != null) 'Authorization': 'Bearer $token',
-    };
-  }
+  Map<String, dynamic>? get reportSummary => _reportSummary;
+  List<dynamic>? get reportCategoryBreakdown => _reportCategoryBreakdown;
+  List<dynamic>? get reportEvolucaoSaldo => _reportEvolucaoSaldo;
+  bool get isLoadingReports => _isLoadingReports;
 
   Future<void> fetchCategories({String type = 'transaction'}) async {
     _isLoadingCategories = true;
     notifyListeners();
     try {
-      final response = await http.get(
-        Uri.parse('$_baseUrl/categories?type=$type'),
-        headers: await _headers,
-      );
+      final response = await _apiService.get('/categories?type=$type');
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body) as List;
         final loaded = data
@@ -87,10 +82,9 @@ class FinanceProvider extends ChangeNotifier {
   }
 
   Future<void> addCategory(AppCategory category) async {
-    final response = await http.post(
-      Uri.parse('$_baseUrl/categories'),
-      headers: await _headers,
-      body: json.encode(category.toJson()),
+    final response = await _apiService.post(
+      '/categories',
+      body: category.toJson(),
     );
     if (response.statusCode == 201) {
       final newCat = AppCategory.fromJson(json.decode(response.body) as Map<String, dynamic>);
@@ -108,10 +102,9 @@ class FinanceProvider extends ChangeNotifier {
   }
 
   Future<void> updateCategory(String id, AppCategory updated) async {
-    final response = await http.put(
-      Uri.parse('$_baseUrl/categories/$id'),
-      headers: await _headers,
-      body: json.encode(updated.toJson()),
+    final response = await _apiService.put(
+      '/categories/$id',
+      body: updated.toJson(),
     );
     if (response.statusCode == 200) {
       final newCat = AppCategory.fromJson(json.decode(response.body) as Map<String, dynamic>);
@@ -137,10 +130,7 @@ class FinanceProvider extends ChangeNotifier {
   }
 
   Future<void> deleteCategory(String id) async {
-    final response = await http.delete(
-      Uri.parse('$_baseUrl/categories/$id'),
-      headers: await _headers,
-    );
+    final response = await _apiService.delete('/categories/$id');
     if (response.statusCode == 200) {
       _transactionCategories.removeWhere((c) => c.id == id);
       _goalCategories.removeWhere((c) => c.id == id);
@@ -156,10 +146,7 @@ class FinanceProvider extends ChangeNotifier {
     _isLoadingTransactions = true;
     notifyListeners();
     try {
-      final response = await http.get(
-        Uri.parse('$_baseUrl/transactions'),
-        headers: await _headers,
-      );
+      final response = await _apiService.get('/transactions');
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body) as List;
         _transactions = data
@@ -192,10 +179,9 @@ class FinanceProvider extends ChangeNotifier {
   }
 
   Future<void> addTransaction(Transaction tx) async {
-    final response = await http.post(
-      Uri.parse('$_baseUrl/transactions'),
-      headers: await _headers,
-      body: json.encode(tx.toJson()),
+    final response = await _apiService.post(
+      '/transactions',
+      body: tx.toJson(),
     );
     if (response.statusCode == 201) {
       final newTx = Transaction.fromJson(json.decode(response.body) as Map<String, dynamic>);
@@ -203,6 +189,7 @@ class FinanceProvider extends ChangeNotifier {
       _recalculateBalances();
       notifyListeners();
       fetchBudgets();
+      fetchReportsData(); // Update reports after adding tx
     } else {
       final msg = (json.decode(response.body) as Map<String, dynamic>)['error'] ??
           'Erro ao criar transação';
@@ -211,15 +198,13 @@ class FinanceProvider extends ChangeNotifier {
   }
 
   Future<void> deleteTransaction(String id) async {
-    final response = await http.delete(
-      Uri.parse('$_baseUrl/transactions/$id'),
-      headers: await _headers,
-    );
+    final response = await _apiService.delete('/transactions/$id');
     if (response.statusCode == 200) {
       _transactions.removeWhere((tx) => tx.id == id);
       _recalculateBalances();
       notifyListeners();
       fetchBudgets();
+      fetchReportsData(); // Update reports after deleting tx
     } else {
       final msg = (json.decode(response.body) as Map<String, dynamic>)['error'] ??
           'Erro ao remover transação';
@@ -233,10 +218,7 @@ class FinanceProvider extends ChangeNotifier {
     try {
       final queryDate = date ?? DateTime.now();
       final dateStr = "${queryDate.year.toString().padLeft(4, '0')}-${queryDate.month.toString().padLeft(2, '0')}-01";
-      final response = await http.get(
-        Uri.parse('$_baseUrl/budgets?date=$dateStr'),
-        headers: await _headers,
-      );
+      final response = await _apiService.get('/budgets?date=$dateStr');
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body) as List;
         _budgets = data
@@ -259,15 +241,14 @@ class FinanceProvider extends ChangeNotifier {
   }) async {
     final queryDate = date ?? DateTime.now();
     final dateStr = "${queryDate.year.toString().padLeft(4, '0')}-${queryDate.month.toString().padLeft(2, '0')}-01";
-    final response = await http.post(
-      Uri.parse('$_baseUrl/budgets'),
-      headers: await _headers,
-      body: json.encode({
+    final response = await _apiService.post(
+      '/budgets',
+      body: {
         'categoryId': categoryId,
         'monthlyLimit': limit,
         'resetDay': resetDay,
         'date': dateStr,
-      }),
+      },
     );
     if (response.statusCode == 201) {
       final newBudget = Budget.fromJson(json.decode(response.body) as Map<String, dynamic>);
@@ -289,10 +270,9 @@ class FinanceProvider extends ChangeNotifier {
       if (limit != null) 'monthlyLimit': limit,
       if (resetDay != null) 'resetDay': resetDay,
     };
-    final response = await http.put(
-      Uri.parse('$_baseUrl/budgets/$id'),
-      headers: await _headers,
-      body: json.encode(body),
+    final response = await _apiService.put(
+      '/budgets/$id',
+      body: body,
     );
     if (response.statusCode == 200) {
       final updatedBudget = Budget.fromJson(json.decode(response.body) as Map<String, dynamic>);
@@ -309,10 +289,7 @@ class FinanceProvider extends ChangeNotifier {
   }
 
   Future<void> deleteBudget(String id) async {
-    final response = await http.delete(
-      Uri.parse('$_baseUrl/budgets/$id'),
-      headers: await _headers,
-    );
+    final response = await _apiService.delete('/budgets/$id');
     if (response.statusCode == 200) {
       _budgets.removeWhere((b) => b.id == id);
       notifyListeners();
@@ -327,10 +304,7 @@ class FinanceProvider extends ChangeNotifier {
     _isLoadingGoals = true;
     notifyListeners();
     try {
-      final response = await http.get(
-        Uri.parse('$_baseUrl/goals'),
-        headers: await _headers,
-      );
+      final response = await _apiService.get('/goals');
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body) as List;
         _goals = data
@@ -346,10 +320,9 @@ class FinanceProvider extends ChangeNotifier {
   }
 
   Future<void> addGoal(Goal goal) async {
-    final response = await http.post(
-      Uri.parse('$_baseUrl/goals'),
-      headers: await _headers,
-      body: json.encode(goal.toJson()),
+    final response = await _apiService.post(
+      '/goals',
+      body: goal.toJson(),
     );
     if (response.statusCode == 201) {
       final newGoal = Goal.fromJson(json.decode(response.body) as Map<String, dynamic>);
@@ -377,10 +350,9 @@ class FinanceProvider extends ChangeNotifier {
       if (deadline != null) 'deadline': deadline.toIso8601String().split('T')[0],
       if (categoryId != null) 'categoryId': categoryId == "" ? "" : categoryId,
     };
-    final response = await http.put(
-      Uri.parse('$_baseUrl/goals/$id'),
-      headers: await _headers,
-      body: json.encode(body),
+    final response = await _apiService.put(
+      '/goals/$id',
+      body: body,
     );
     if (response.statusCode == 200) {
       final updatedGoal = Goal.fromJson(json.decode(response.body) as Map<String, dynamic>);
@@ -397,10 +369,7 @@ class FinanceProvider extends ChangeNotifier {
   }
 
   Future<void> deleteGoal(String id) async {
-    final response = await http.delete(
-      Uri.parse('$_baseUrl/goals/$id'),
-      headers: await _headers,
-    );
+    final response = await _apiService.delete('/goals/$id');
     if (response.statusCode == 200) {
       _goals.removeWhere((g) => g.id == id);
       notifyListeners();
@@ -408,6 +377,40 @@ class FinanceProvider extends ChangeNotifier {
       final msg = (json.decode(response.body) as Map<String, dynamic>)['error'] ??
           'Erro ao remover meta';
       throw Exception(msg);
+    }
+  }
+
+  Future<void> fetchReportsData({DateTime? startDate, DateTime? endDate}) async {
+    _isLoadingReports = true;
+    notifyListeners();
+
+    try {
+      String query = '';
+      if (startDate != null && endDate != null) {
+        final startStr = startDate.toIso8601String().split('T')[0];
+        final endStr = endDate.toIso8601String().split('T')[0];
+        query = '?start_date=$startStr&end_date=$endStr';
+      }
+
+      final summaryRes = await _apiService.get('/relatorios/resumo$query');
+      if (summaryRes.statusCode == 200) {
+        _reportSummary = json.decode(summaryRes.body);
+      }
+
+      final catRes = await _apiService.get('/relatorios/por-categoria$query');
+      if (catRes.statusCode == 200) {
+        _reportCategoryBreakdown = json.decode(catRes.body);
+      }
+
+      final evolRes = await _apiService.get('/relatorios/evolucao-saldo$query');
+      if (evolRes.statusCode == 200) {
+        _reportEvolucaoSaldo = json.decode(evolRes.body);
+      }
+    } catch (e) {
+      debugPrint('fetchReportsData error: $e');
+    } finally {
+      _isLoadingReports = false;
+      notifyListeners();
     }
   }
 }
