@@ -19,15 +19,15 @@ class FinanceProvider extends ChangeNotifier {
   bool _isLoadingBudgets = false;
   bool _isLoadingGoals = false;
 
-  double _balance = 0.0;
-  double _income = 0.0;
-  double _expenses = 0.0;
-
   // Relatórios State
   Map<String, dynamic>? _reportSummary;
   List<dynamic>? _reportCategoryBreakdown;
-  List<dynamic>? _reportEvolucaoSaldo;
+  List<dynamic>? _reportBalanceEvolution;
   bool _isLoadingReports = false;
+
+  double _balance = 0.0;
+  double _income = 0.0;
+  double _expenses = 0.0;
 
   List<AppCategory> get transactionCategories => List.unmodifiable(_transactionCategories);
   List<AppCategory> get goalCategories => List.unmodifiable(_goalCategories);
@@ -40,14 +40,14 @@ class FinanceProvider extends ChangeNotifier {
   bool get isLoadingBudgets => _isLoadingBudgets;
   bool get isLoadingGoals => _isLoadingGoals;
 
+  Map<String, dynamic>? get reportSummary => _reportSummary;
+  List<dynamic>? get reportCategoryBreakdown => _reportCategoryBreakdown;
+  List<dynamic>? get reportBalanceEvolution => _reportBalanceEvolution;
+  bool get isLoadingReports => _isLoadingReports;
+
   double get balance => _balance;
   double get income => _income;
   double get expenses => _expenses;
-
-  Map<String, dynamic>? get reportSummary => _reportSummary;
-  List<dynamic>? get reportCategoryBreakdown => _reportCategoryBreakdown;
-  List<dynamic>? get reportEvolucaoSaldo => _reportEvolucaoSaldo;
-  bool get isLoadingReports => _isLoadingReports;
 
   Future<void> fetchCategories({String type = 'transaction'}) async {
     _isLoadingCategories = true;
@@ -404,7 +404,7 @@ class FinanceProvider extends ChangeNotifier {
 
       final evolRes = await _apiService.get('/relatorios/evolucao-saldo$query');
       if (evolRes.statusCode == 200) {
-        _reportEvolucaoSaldo = json.decode(evolRes.body);
+        _reportBalanceEvolution = json.decode(evolRes.body);
       }
     } catch (e) {
       debugPrint('fetchReportsData error: $e');

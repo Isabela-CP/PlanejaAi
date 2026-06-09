@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../providers/finance_provider.dart';
 
 class ReportsScreen extends StatefulWidget {
@@ -23,16 +24,81 @@ class _ReportsScreenState extends State<ReportsScreen> {
   final _formatCurrency = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
   final _formatDate = DateFormat('dd/MM/yyyy');
 
-  final List<String> _categories = [
-    'Alimentação', 'Transporte', 'Entretenimento',
-    'Contas', 'Compras', 'Saúde', 'Educação', 'Outros',
-  ];
-
   final _transactionTypes = [
     {'value': 'all', 'label': 'Todas as Transações'},
     {'value': 'income', 'label': 'Somente Receitas'},
     {'value': 'expense', 'label': 'Somente Despesas'},
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    final now = DateTime.now();
+    _startDate = DateTime(now.year, now.month, 1);
+    _endDate = DateTime(now.year, now.month + 1, 0);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<FinanceProvider>().fetchCategories(type: 'transaction');
+    });
+  }
+
+  Color _parseColor(String? hex) {
+    if (hex == null) return Colors.grey;
+    final cleanHex = hex.replaceFirst('#', '');
+    if (cleanHex.length == 6) {
+      return Color(int.parse('FF$cleanHex', radix: 16));
+    }
+    return Colors.grey;
+  }
+
+  IconData _getIconData(String? iconName) {
+    switch (iconName) {
+      case 'utensils': return LucideIcons.utensils;
+      case 'car': return LucideIcons.car;
+      case 'palmtree': return LucideIcons.palmtree;
+      case 'home': return LucideIcons.home;
+      case 'trending-up': return LucideIcons.trendingUp;
+      case 'shopping-cart': return LucideIcons.shoppingCart;
+      case 'bus': return LucideIcons.bus;
+      case 'ticket': return LucideIcons.ticket;
+      case 'sandwich': return LucideIcons.sandwich;
+      case 'book-open': return LucideIcons.bookOpen;
+      case 'help-circle': return LucideIcons.helpCircle;
+      case 'heart': return LucideIcons.heart;
+      case 'briefcase': return LucideIcons.briefcase;
+      case 'music': return LucideIcons.music;
+      case 'gamepad-2': return LucideIcons.gamepad2;
+      case 'plane': return LucideIcons.plane;
+      case 'dumbbell': return LucideIcons.dumbbell;
+      case 'baby': return LucideIcons.baby;
+      case 'shirt': return LucideIcons.shirt;
+      case 'wifi': return LucideIcons.wifi;
+      case 'zap': return LucideIcons.zap;
+      case 'gift': return LucideIcons.gift;
+      case 'coffee': return LucideIcons.coffee;
+      case 'dollar-sign': return LucideIcons.dollarSign;
+      case 'piggy-bank': return LucideIcons.piggyBank;
+      case 'graduation-cap': return LucideIcons.graduationCap;
+      case 'stethoscope': return LucideIcons.stethoscope;
+      case 'paw-print': return LucideIcons.pawPrint;
+      case 'film': return LucideIcons.film;
+      default: return LucideIcons.helpCircle;
+    }
+  }
+
+  String _formatMonthLabel(String monthStr) {
+    try {
+      final parts = monthStr.split('-');
+      if (parts.length == 2) {
+        final yearShort = parts[0].substring(2);
+        final monthNum = int.parse(parts[1]);
+        const monthNames = ['', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+        if (monthNum >= 1 && monthNum <= 12) {
+          return "${monthNames[monthNum]}/$yearShort";
+        }
+      }
+    } catch (_) {}
+    return monthStr;
+  }
 
   Future<void> _pickDate({required bool isStart}) async {
     final now = DateTime.now();
@@ -66,10 +132,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
       );
       return;
     }
-    if (!_startDate!.isBefore(_endDate!)) {
+    if (!_startDate!.isBefore(_endDate!) && !_startDate!.isAtSameMomentAs(_endDate!)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('A data de início deve ser anterior à data de fim.'),
+          content: const Text('A data de início deve ser anterior ou igual à data de fim.'),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -239,25 +305,36 @@ class _ReportsScreenState extends State<ReportsScreen> {
             Text('Categorias (vazio = todas)',
                 style: theme.textTheme.titleSmall?.copyWith(color: mutedColor)),
             const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _categories.map((cat) {
-                final isSelected = _selectedCategories.contains(cat);
-                return FilterChip(
-                  label: Text(cat),
-                  selected: isSelected,
-                  onSelected: (val) {
-                    setState(() {
-                      if (val) {
-                        _selectedCategories.add(cat);
-                      } else {
-                        _selectedCategories.remove(cat);
-                      }
-                    });
-                  },
+            Consumer<FinanceProvider>(
+              builder: (context, financeProvider, child) {
+                final categoriesList = financeProvider.transactionCategories.map((c) => c.name).toList();
+                if (categoriesList.isEmpty) {
+                  return Text(
+                    'Nenhuma categoria encontrada.',
+                    style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.5)),
+                  );
+                }
+                return Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: categoriesList.map((cat) {
+                    final isSelected = _selectedCategories.contains(cat);
+                    return FilterChip(
+                      label: Text(cat),
+                      selected: isSelected,
+                      onSelected: (val) {
+                        setState(() {
+                          if (val) {
+                            _selectedCategories.add(cat);
+                          } else {
+                            _selectedCategories.remove(cat);
+                          }
+                        });
+                      },
+                    );
+                  }).toList(),
                 );
-              }).toList(),
+              }
             ),
           ],
         ),
@@ -325,21 +402,145 @@ class _ReportsScreenState extends State<ReportsScreen> {
     ).animate().fade(duration: 400.ms).scale(begin: const Offset(0.97, 0.97));
   }
 
+  Widget _buildLineChartCard(List<dynamic> evolution) {
+    final theme = Theme.of(context);
+    if (evolution.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final spots = <FlSpot>[];
+    double minY = 0.0;
+    double maxY = 0.0;
+
+    for (int i = 0; i < evolution.length; i++) {
+      final val = (evolution[i]['cumulative'] as num?)?.toDouble() ?? 0.0;
+      spots.add(FlSpot(i.toDouble(), val));
+      if (i == 0) {
+        minY = val;
+        maxY = val;
+      } else {
+        if (val < minY) minY = val;
+        if (val > maxY) maxY = val;
+      }
+    }
+
+    final range = maxY - minY;
+    if (range == 0) {
+      minY -= 100;
+      maxY += 100;
+    } else {
+      minY -= range * 0.15;
+      maxY += range * 0.15;
+    }
+
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Evolução do Saldo ao Longo do Tempo',
+                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 24),
+            SizedBox(
+              height: 250,
+              child: LineChart(
+                LineChartData(
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: false,
+                    getDrawingHorizontalLine: (value) => FlLine(
+                      color: theme.dividerColor.withOpacity(0.5),
+                      strokeWidth: 1,
+                    ),
+                  ),
+                  titlesData: FlTitlesData(
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 30,
+                        interval: 1,
+                        getTitlesWidget: (value, meta) {
+                          final index = value.toInt();
+                          if (index >= 0 && index < evolution.length) {
+                            final monthStr = evolution[index]['month'] as String? ?? '';
+                            final label = _formatMonthLabel(monthStr);
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: Text(label, style: TextStyle(fontSize: 10, color: theme.colorScheme.onSurface.withOpacity(0.6))),
+                            );
+                          }
+                          return const Text('');
+                        },
+                      ),
+                    ),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 45,
+                        getTitlesWidget: (value, meta) {
+                          return Text(
+                            value >= 1000 ? '${(value / 1000).toStringAsFixed(1)}k' : value.toStringAsFixed(0),
+                            style: TextStyle(fontSize: 10, color: theme.colorScheme.onSurface.withOpacity(0.6)),
+                          );
+                        },
+                      ),
+                    ),
+                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  ),
+                  borderData: FlBorderData(show: false),
+                  minY: minY,
+                  maxY: maxY,
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: spots,
+                      isCurved: true,
+                      color: theme.colorScheme.primary,
+                      barWidth: 3,
+                      isStrokeCapRound: true,
+                      dotData: const FlDotData(show: true),
+                      belowBarData: BarAreaData(
+                        show: true,
+                        color: theme.colorScheme.primary.withOpacity(0.1),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildReportResults(BuildContext context) {
     final theme = Theme.of(context);
-    final provider = context.watch<FinanceProvider>();
+    final financeProvider = context.watch<FinanceProvider>();
     
-    final summaryData = provider.reportSummary ?? {};
-    final categoryBreakdown = provider.reportCategoryBreakdown ?? [];
-    
-    final totalIncome = (summaryData['receita'] as num?)?.toDouble() ?? 0.0;
-    final totalExpenses = (summaryData['despesa'] as num?)?.toDouble() ?? 0.0;
-    final netIncome = (summaryData['liquido'] as num?)?.toDouble() ?? 0.0;
-    final transactionCount = (summaryData['quantidade_transacoes'] as num?)?.toInt() ?? 0;
+    final summary = financeProvider.reportSummary ?? {};
+    final rawBreakdown = financeProvider.reportCategoryBreakdown ?? [];
+    final evolution = financeProvider.reportBalanceEvolution ?? [];
 
     final typeLabel = _transactionType == 'all'
         ? 'todas as transações'
         : _transactionType == 'income' ? 'somente receitas' : 'somente despesas';
+
+    final totalIncome = (summary['receita'] as num?)?.toDouble() ?? 0.0;
+    final totalExpenses = (summary['despesa'] as num?)?.toDouble() ?? 0.0;
+    final netIncome = (summary['liquido'] as num?)?.toDouble() ?? 0.0;
+    final transactionCount = (summary['quantidade_transacoes'] as num?)?.toDouble() ?? 0.0;
+
+    final breakdown = rawBreakdown.where((item) {
+      final catName = item['category'] as String? ?? '';
+      if (_selectedCategories.isNotEmpty && !_selectedCategories.contains(catName)) {
+        return false;
+      }
+      return true;
+    }).toList();
 
     return Column(
       children: [
@@ -396,7 +597,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   LucideIcons.trendingDown, const Color(0xFFEF4444), 100),
               _buildSummaryCard('Renda Líquida', netIncome,
                   LucideIcons.dollarSign, theme.colorScheme.primary, 150),
-              _buildSummaryCard('Transações', transactionCount.toDouble(),
+              _buildSummaryCard('Transações', transactionCount,
                   LucideIcons.fileText, theme.colorScheme.onSurface.withOpacity(0.7), 200,
                   isCount: true),
             ],
@@ -417,15 +618,25 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 Text('Despesas por Categoria',
                     style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 16),
-                if (categoryBreakdown.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 24.0),
-                    child: Center(child: Text('Nenhuma despesa no período')),
+                if (breakdown.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24.0),
+                    child: Center(
+                      child: Text(
+                        'Nenhuma despesa registrada para o filtro selecionado.',
+                        style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.5)),
+                      ),
+                    ),
                   )
                 else
-                  ...categoryBreakdown.asMap().entries.map((entry) {
+                  ...breakdown.asMap().entries.map((entry) {
                     final index = entry.key;
                     final item = entry.value;
+                    final colorHex = item['colorHex'] as String?;
+                    final iconName = item['iconName'] as String?;
+                    final color = _parseColor(colorHex);
+                    final icon = _getIconData(iconName);
+
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: Container(
@@ -437,20 +648,33 @@ class _ReportsScreenState extends State<ReportsScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            Row(
                               children: [
-                                Text(item['category'] as String,
-                                    style: const TextStyle(fontWeight: FontWeight.w600)),
-                                Text('${(item['percentage'] as num).toStringAsFixed(1)}% do total',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: theme.colorScheme.onSurface.withOpacity(0.6),
-                                    )),
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: color.withOpacity(0.15),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(icon, color: color, size: 20),
+                                ),
+                                const SizedBox(width: 12),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(item['category'] as String,
+                                        style: const TextStyle(fontWeight: FontWeight.w600)),
+                                    Text('${(item['percentage'] as num).toStringAsFixed(1)}% do total',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                                        )),
+                                  ],
+                                ),
                               ],
                             ),
                             Text(
-                              _formatCurrency.format((item['amount'] as num).toDouble()),
+                              _formatCurrency.format((item['amount'] as num?)?.toDouble() ?? 0.0),
                               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                             ),
                           ],
@@ -463,6 +687,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
             ),
           ),
         ).animate().fade(duration: 400.ms, delay: 250.ms).slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut),
+
+        const SizedBox(height: 16),
+
+        // Gráfico de Evolução do Saldo
+        _buildLineChartCard(evolution)
+            .animate()
+            .fade(duration: 400.ms, delay: 280.ms)
+            .slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut),
 
         const SizedBox(height: 16),
 
