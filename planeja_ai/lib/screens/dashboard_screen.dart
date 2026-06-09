@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
+import '../providers/finance_provider.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -12,116 +14,131 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  final summaryData = {
-    'totalIncome': 5420.00,
-    'totalExpenses': 3240.50,
-    'balance': 2179.50,
-    'savings': 1800.00,
-  };
-
-  final categoryData = [
-    {'name': 'Alimentação', 'value': 850.0, 'color': const Color(0xFFFF6B6B)},
-    {'name': 'Transporte', 'value': 420.0, 'color': const Color(0xFF4ECDC4)},
-    {'name': 'Entretenimento', 'value': 320.0, 'color': const Color(0xFF45B7D1)},
-    {'name': 'Contas', 'value': 950.0, 'color': const Color(0xFF96CEB4)},
-    {'name': 'Compras', 'value': 680.0, 'color': const Color(0xFFFECA57)},
-  ];
-
   final formatCurrency = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<FinanceProvider>().fetchReportsData();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: Consumer<FinanceProvider>(
+        builder: (context, provider, child) {
+          if (provider.isLoadingReports) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final summaryData = provider.reportSummary ?? {
+            'receita': provider.income,
+            'despesa': provider.expenses,
+            'liquido': provider.balance,
+          };
+
+          final totalIncome = (summaryData['receita'] as num?)?.toDouble() ?? 0.0;
+          final totalExpenses = (summaryData['despesa'] as num?)?.toDouble() ?? 0.0;
+          final balance = (summaryData['liquido'] as num?)?.toDouble() ?? 0.0;
+          final savings = 0.0; // Poupado ainda não implementado no backend real
+
+          final categoryBreakdown = provider.reportCategoryBreakdown ?? [];
+          final evolucaoList = provider.reportEvolucaoSaldo ?? [];
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Painel',
-                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-                ).animate().fade().slideX(),
+                // Header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Painel',
+                      style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                    ).animate().fade().slideX(),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // Summary Cards
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final crossAxisCount = constraints.maxWidth > 800 ? 4 : (constraints.maxWidth > 500 ? 2 : 1);
+                    return GridView.count(
+                      crossAxisCount: crossAxisCount,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisSpacing: 24,
+                      mainAxisSpacing: 24,
+                      childAspectRatio: constraints.maxWidth > 500 ? 1.5 : 2.5,
+                      children: [
+                        _buildSummaryCard(
+                          'Receita Total',
+                          totalIncome,
+                          LucideIcons.trendingUp,
+                          const Color(0xFF10B981),
+                          'Mês atual',
+                        ).animate().fade(duration: 400.ms, delay: 50.ms).slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut),
+                        _buildSummaryCard(
+                          'Gastos Totais',
+                          totalExpenses,
+                          LucideIcons.trendingDown,
+                          const Color(0xFFEF4444),
+                          'Mês atual',
+                        ).animate().fade(duration: 400.ms, delay: 100.ms).slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut),
+                        _buildSummaryCard(
+                          'Saldo',
+                          balance,
+                          LucideIcons.dollarSign,
+                          const Color(0xFF3B82F6),
+                          'Mês atual',
+                        ).animate().fade(duration: 400.ms, delay: 150.ms).slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut),
+                        _buildSummaryCard(
+                          'Economia',
+                          savings,
+                          LucideIcons.piggyBank,
+                          const Color(0xFFA855F7),
+                          'Mês atual',
+                        ).animate().fade(duration: 400.ms, delay: 200.ms).slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut),
+                      ],
+                    );
+                  },
+                ),
+                const SizedBox(height: 24),
+
+                // Charts Layer
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isWide = constraints.maxWidth > 800;
+                    return isWide
+                        ? Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(child: _buildPieChartCard(categoryBreakdown, totalExpenses)),
+                              const SizedBox(width: 24),
+                              Expanded(child: _buildBarChartCard(evolucaoList)),
+                            ],
+                          )
+                        : Column(
+                            children: [
+                              _buildPieChartCard(categoryBreakdown, totalExpenses),
+                              const SizedBox(height: 24),
+                              _buildBarChartCard(evolucaoList),
+                            ],
+                          );
+                  },
+                ).animate().fade(duration: 400.ms, delay: 250.ms).slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut),
+
+                const SizedBox(height: 24),
+                _buildLineChartCard(evolucaoList).animate().fade(duration: 400.ms, delay: 300.ms).slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut),
               ],
             ),
-            const SizedBox(height: 24),
-
-            // Summary Cards
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final crossAxisCount = constraints.maxWidth > 800 ? 4 : (constraints.maxWidth > 500 ? 2 : 1);
-                return GridView.count(
-                  crossAxisCount: crossAxisCount,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisSpacing: 24,
-                  mainAxisSpacing: 24,
-                  childAspectRatio: constraints.maxWidth > 500 ? 1.5 : 2.5,
-                  children: [
-                    _buildSummaryCard(
-                      'Receita Total',
-                      summaryData['totalIncome']!,
-                      LucideIcons.trendingUp,
-                      const Color(0xFF10B981),
-                      '+12% do mês passado',
-                    ).animate().fade(duration: 400.ms, delay: 50.ms).slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut),
-                    _buildSummaryCard(
-                      'Gastos Totais',
-                      summaryData['totalExpenses']!,
-                      LucideIcons.trendingDown,
-                      const Color(0xFFEF4444),
-                      '+5% do mês passado',
-                    ).animate().fade(duration: 400.ms, delay: 100.ms).slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut),
-                    _buildSummaryCard(
-                      'Saldo',
-                      summaryData['balance']!,
-                      LucideIcons.dollarSign,
-                      const Color(0xFF3B82F6),
-                      '+18% do mês passado',
-                    ).animate().fade(duration: 400.ms, delay: 150.ms).slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut),
-                    _buildSummaryCard(
-                      'Economia',
-                      summaryData['savings']!,
-                      LucideIcons.piggyBank,
-                      const Color(0xFFA855F7),
-                      '+8% do mês passado',
-                    ).animate().fade(duration: 400.ms, delay: 200.ms).slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut),
-                  ],
-                );
-              },
-            ),
-            const SizedBox(height: 24),
-
-            // Charts Layer
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final isWide = constraints.maxWidth > 800;
-                return isWide
-                    ? Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(child: _buildPieChartCard()),
-                          const SizedBox(width: 24),
-                          Expanded(child: _buildBarChartCard()),
-                        ],
-                      )
-                    : Column(
-                        children: [
-                          _buildPieChartCard(),
-                          const SizedBox(height: 24),
-                          _buildBarChartCard(),
-                        ],
-                      );
-              },
-            ).animate().fade(duration: 400.ms, delay: 250.ms).slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut),
-
-            const SizedBox(height: 24),
-            _buildLineChartCard().animate().fade(duration: 400.ms, delay: 300.ms).slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -159,7 +176,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildPieChartCard() {
+  Widget _buildPieChartCard(List<dynamic> categoryBreakdown, double totalExpenses) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -170,24 +187,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(height: 24),
             SizedBox(
               height: 250,
-              child: PieChart(
-                PieChartData(
-                  sectionsSpace: 2,
-                  centerSpaceRadius: 40,
-                  sections: categoryData.map((data) {
-                    final value = data['value'] as double;
-                    final color = data['color'] as Color;
-                    final title = data['name'] as String;
-                    return PieChartSectionData(
-                      color: color,
-                      value: value,
-                      title: '${(value / 3240.5 * 100).toStringAsFixed(0)}%',
-                      radius: 50,
-                      titleStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
-                    );
-                  }).toList(),
-                ),
-              ),
+              child: categoryBreakdown.isEmpty
+                  ? const Center(child: Text('Sem gastos no período'))
+                  : PieChart(
+                      PieChartData(
+                        sectionsSpace: 2,
+                        centerSpaceRadius: 40,
+                        sections: categoryBreakdown.map((item) {
+                          final value = (item['amount'] as num).toDouble();
+                          String hexColor = item['colorHex'] as String;
+                          if (!hexColor.startsWith('#')) hexColor = '#9E9E9E';
+                          final color = Color(int.parse(hexColor.replaceFirst('#', '0xFF')));
+                          
+                          return PieChartSectionData(
+                            color: color,
+                            value: value,
+                            title: '${(item['percentage'] as num).toStringAsFixed(0)}%',
+                            radius: 50,
+                            titleStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                          );
+                        }).toList(),
+                      ),
+                    ),
             ),
           ],
         ),
@@ -195,15 +216,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildBarChartCard() {
-    final barGroups = [
-      BarChartGroupData(x: 0, barRods: [BarChartRodData(toY: 4800, color: const Color(0xFF10B981)), BarChartRodData(toY: 3200, color: const Color(0xFFEF4444))]),
-      BarChartGroupData(x: 1, barRods: [BarChartRodData(toY: 5200, color: const Color(0xFF10B981)), BarChartRodData(toY: 3100, color: const Color(0xFFEF4444))]),
-      BarChartGroupData(x: 2, barRods: [BarChartRodData(toY: 5420, color: const Color(0xFF10B981)), BarChartRodData(toY: 3240, color: const Color(0xFFEF4444))]),
-      BarChartGroupData(x: 3, barRods: [BarChartRodData(toY: 5100, color: const Color(0xFF10B981)), BarChartRodData(toY: 2950, color: const Color(0xFFEF4444))]),
-      BarChartGroupData(x: 4, barRods: [BarChartRodData(toY: 5300, color: const Color(0xFF10B981)), BarChartRodData(toY: 3100, color: const Color(0xFFEF4444))]),
-      BarChartGroupData(x: 5, barRods: [BarChartRodData(toY: 5420, color: const Color(0xFF10B981)), BarChartRodData(toY: 3240, color: const Color(0xFFEF4444))]),
-    ];
+  Widget _buildBarChartCard(List<dynamic> evolucaoList) {
+    double maxY = 0;
+    for (var item in evolucaoList) {
+      final r = (item['receitas'] as num).toDouble();
+      final d = (item['despesas'] as num).toDouble();
+      if (r > maxY) maxY = r;
+      if (d > maxY) maxY = d;
+    }
+    maxY = maxY * 1.2;  
+    if (maxY > 0) {
+      double interval = maxY > 1000 ? 500 : (maxY > 100 ? 100 : 50);
+      maxY = (maxY / interval).ceil() * interval;
+    }
+    if (maxY == 0) maxY = 100;
+
+    final barGroups = evolucaoList.asMap().entries.map((entry) {
+      final idx = entry.key;
+      final item = entry.value;
+      return BarChartGroupData(
+        x: idx,
+        barRods: [
+          BarChartRodData(toY: (item['receitas'] as num).toDouble(), color: const Color(0xFF10B981)),
+          BarChartRodData(toY: (item['despesas'] as num).toDouble(), color: const Color(0xFFEF4444)),
+        ],
+      );
+    }).toList();
 
     return Card(
       child: Padding(
@@ -215,29 +253,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(height: 24),
             SizedBox(
               height: 250,
-              child: BarChart(
-                BarChartData(
-                  barGroups: barGroups,
-                  borderData: FlBorderData(show: false),
-                  gridData: FlGridData(show: true, drawVerticalLine: false),
-                  titlesData: FlTitlesData(
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (value, meta) {
-                          const titles = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'];
-                          if (value.toInt() >= 0 && value.toInt() < titles.length) {
-                            return Padding(padding: const EdgeInsets.only(top: 8), child: Text(titles[value.toInt()]));
-                          }
-                          return const Text('');
-                        },
+              child: evolucaoList.isEmpty
+                  ? const Center(child: Text('Sem dados'))
+                  : BarChart(
+                      BarChartData(
+                        maxY: maxY,
+                        barGroups: barGroups,
+                        borderData: FlBorderData(show: false),
+                        gridData: FlGridData(show: true, drawVerticalLine: false),
+                        titlesData: FlTitlesData(
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              getTitlesWidget: (value, meta) {
+                                if (value.toInt() >= 0 && value.toInt() < evolucaoList.length) {
+                                  final mesStr = evolucaoList[value.toInt()]['mes'] as String;
+                                  final parts = mesStr.split('-');
+                                  final month = int.tryParse(parts[1]) ?? 1;
+                                  final title = DateFormat('MMM', 'pt_BR').format(DateTime(2000, month));
+                                  return Padding(padding: const EdgeInsets.only(top: 8), child: Text(title, style: const TextStyle(fontSize: 12)));
+                                }
+                                return const Text('');
+                              },
+                            ),
+                          ),
+                          leftTitles: const AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              reservedSize: 42,
+                            ),
+                          ),
+                          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        ),
                       ),
                     ),
-                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  ),
-                ),
-              ),
             ),
           ],
         ),
@@ -245,15 +295,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildLineChartCard() {
-    final spots = [
-      const FlSpot(0, 1600),
-      const FlSpot(1, 1700),
-      const FlSpot(2, 1880),
-      const FlSpot(3, 2030),
-      const FlSpot(4, 2230),
-      const FlSpot(5, 2179),
-    ];
+  Widget _buildLineChartCard(List<dynamic> evolucaoList) {
+    double maxY = 0;
+    double minY = 0;
+    for (var item in evolucaoList) {
+      final s = (item['saldo'] as num).toDouble();
+      if (s > maxY) maxY = s;
+      if (s < minY) minY = s;
+    }
+    maxY = maxY * 1.2; 
+    if (maxY > 0) {
+      double interval = maxY > 1000 ? 500 : (maxY > 100 ? 100 : 50);
+      maxY = (maxY / interval).ceil() * interval;
+    }
+    minY = minY < 0 ? minY * 1.2 : 0;
+    if (maxY == 0) maxY = 100;
+
+    final spots = evolucaoList.asMap().entries.map((entry) {
+      final idx = entry.key;
+      final item = entry.value;
+      return FlSpot(idx.toDouble(), (item['saldo'] as num).toDouble());
+    }).toList();
 
     return Card(
       child: Padding(
@@ -265,43 +327,56 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(height: 24),
             SizedBox(
               height: 300,
-              child: LineChart(
-                LineChartData(
-                  gridData: FlGridData(show: true, drawVerticalLine: false),
-                  titlesData: FlTitlesData(
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (value, meta) {
-                          const titles = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'];
-                          if (value.toInt() >= 0 && value.toInt() < titles.length) {
-                            return Padding(padding: const EdgeInsets.only(top: 8), child: Text(titles[value.toInt()]));
-                          }
-                          return const Text('');
-                        },
-                        interval: 1,
+              child: evolucaoList.isEmpty
+                  ? const Center(child: Text('Sem dados'))
+                  : LineChart(
+                      LineChartData(
+                        maxY: maxY,
+                        minY: minY,
+                        gridData: FlGridData(show: true, drawVerticalLine: false),
+                        titlesData: FlTitlesData(
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              getTitlesWidget: (value, meta) {
+                                if (value.toInt() >= 0 && value.toInt() < evolucaoList.length) {
+                                  final mesStr = evolucaoList[value.toInt()]['mes'] as String;
+                                  final parts = mesStr.split('-');
+                                  final month = int.tryParse(parts[1]) ?? 1;
+                                  final title = DateFormat('MMM', 'pt_BR').format(DateTime(2000, month));
+                                  return Padding(padding: const EdgeInsets.only(top: 8), child: Text(title, style: const TextStyle(fontSize: 12)));
+                                }
+                                return const Text('');
+                              },
+                              interval: 1,
+                            ),
+                          ),
+                          leftTitles: const AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              reservedSize: 42,
+                            ),
+                          ),
+                          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        ),
+                        borderData: FlBorderData(show: false),
+                        lineBarsData: [
+                          LineChartBarData(
+                            spots: spots,
+                            isCurved: true,
+                            color: const Color(0xFF6BB319),
+                            barWidth: 3,
+                            isStrokeCapRound: true,
+                            dotData: const FlDotData(show: true),
+                            belowBarData: BarAreaData(
+                              show: true,
+                              color: const Color(0xFF6BB319).withOpacity(0.1),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  ),
-                  borderData: FlBorderData(show: false),
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: spots,
-                      isCurved: true,
-                      color: const Color(0xFF6BB319),
-                      barWidth: 3,
-                      isStrokeCapRound: true,
-                      dotData: const FlDotData(show: true),
-                      belowBarData: BarAreaData(
-                        show: true,
-                        color: const Color(0xFF6BB319).withOpacity(0.1),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ),
           ],
         ),

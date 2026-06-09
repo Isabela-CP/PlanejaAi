@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../providers/finance_provider.dart';
 
@@ -145,13 +145,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
     setState(() => _isGenerating = true);
 
     try {
-      await context.read<FinanceProvider>().fetchReport(
-        startDate: _startDate!,
-        endDate: _endDate!,
+      await context.read<FinanceProvider>().fetchReportsData(
+        startDate: _startDate,
+        endDate: _endDate,
       );
+
       if (mounted) {
         setState(() {
-          _isGenerating = false;
           _hasReport = true;
         });
         ScaffoldMessenger.of(context).showSnackBar(
@@ -163,13 +163,16 @@ class _ReportsScreenState extends State<ReportsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _isGenerating = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erro ao gerar relatório: ${e.toString()}'),
+            content: Text('Erro ao gerar relatório: $e'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isGenerating = false);
       }
     }
   }
@@ -213,7 +216,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
             // Data início, Data fim, Tipo e Botão
             LayoutBuilder(builder: (context, constraints) {
-              final isWide = constraints.maxWidth > 600;
+              final isWide = constraints.maxWidth > 900;
               Widget startDateField = _buildDateField(
                 label: 'Data de Início',
                 value: _startDate,
@@ -517,18 +520,19 @@ class _ReportsScreenState extends State<ReportsScreen> {
   Widget _buildReportResults(BuildContext context) {
     final theme = Theme.of(context);
     final financeProvider = context.watch<FinanceProvider>();
+    
     final summary = financeProvider.reportSummary ?? {};
-    final rawBreakdown = financeProvider.reportCategoryBreakdown;
-    final evolution = financeProvider.reportBalanceEvolution;
+    final rawBreakdown = financeProvider.reportCategoryBreakdown ?? [];
+    final evolution = financeProvider.reportBalanceEvolution ?? [];
 
     final typeLabel = _transactionType == 'all'
         ? 'todas as transações'
         : _transactionType == 'income' ? 'somente receitas' : 'somente despesas';
 
-    final totalIncome = (summary['totalIncome'] as num?)?.toDouble() ?? 0.0;
-    final totalExpenses = (summary['totalExpenses'] as num?)?.toDouble() ?? 0.0;
-    final netIncome = (summary['netIncome'] as num?)?.toDouble() ?? 0.0;
-    final transactionCount = (summary['transactionCount'] as num?)?.toDouble() ?? 0.0;
+    final totalIncome = (summary['receita'] as num?)?.toDouble() ?? 0.0;
+    final totalExpenses = (summary['despesa'] as num?)?.toDouble() ?? 0.0;
+    final netIncome = (summary['liquido'] as num?)?.toDouble() ?? 0.0;
+    final transactionCount = (summary['quantidade_transacoes'] as num?)?.toDouble() ?? 0.0;
 
     final breakdown = rawBreakdown.where((item) {
       final catName = item['category'] as String? ?? '';
@@ -632,6 +636,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     final iconName = item['iconName'] as String?;
                     final color = _parseColor(colorHex);
                     final icon = _getIconData(iconName);
+
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: Container(
@@ -659,7 +664,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                   children: [
                                     Text(item['category'] as String,
                                         style: const TextStyle(fontWeight: FontWeight.w600)),
-                                    Text('${item['percentage']}% do total',
+                                    Text('${(item['percentage'] as num).toStringAsFixed(1)}% do total',
                                         style: TextStyle(
                                           fontSize: 12,
                                           color: theme.colorScheme.onSurface.withOpacity(0.6),
