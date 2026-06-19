@@ -33,19 +33,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final summaryData = provider.reportSummary ?? {
-            'receita': provider.income,
-            'despesa': provider.expenses,
-            'liquido': provider.balance,
-          };
+          final summaryData = provider.reportSummary ??
+              {
+                'receita': provider.income,
+                'despesa': provider.expenses,
+                'liquido': provider.balance,
+              };
 
-          final totalIncome = (summaryData['receita'] as num?)?.toDouble() ?? 0.0;
-          final totalExpenses = (summaryData['despesa'] as num?)?.toDouble() ?? 0.0;
+          final totalIncome =
+              (summaryData['receita'] as num?)?.toDouble() ?? 0.0;
+          final totalExpenses =
+              (summaryData['despesa'] as num?)?.toDouble() ?? 0.0;
           final balance = (summaryData['liquido'] as num?)?.toDouble() ?? 0.0;
-          final savings = 0.0; // Poupado ainda não implementado no backend real
+          final savings = 0.0;
 
           final categoryBreakdown = provider.reportCategoryBreakdown ?? [];
-          final evolucaoList = provider.reportEvolucaoSaldo ?? [];
+          final evolucaoList = provider.reportBalanceEvolution ?? [];
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
@@ -58,7 +61,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   children: [
                     const Text(
                       'Painel',
-                      style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                      style:
+                          TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                     ).animate().fade().slideX(),
                   ],
                 ),
@@ -67,7 +71,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 // Summary Cards
                 LayoutBuilder(
                   builder: (context, constraints) {
-                    final crossAxisCount = constraints.maxWidth > 800 ? 4 : (constraints.maxWidth > 500 ? 2 : 1);
+                    final crossAxisCount = constraints.maxWidth > 800
+                        ? 4
+                        : (constraints.maxWidth > 500 ? 2 : 1);
                     return GridView.count(
                       crossAxisCount: crossAxisCount,
                       shrinkWrap: true,
@@ -82,28 +88,53 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           LucideIcons.trendingUp,
                           const Color(0xFF10B981),
                           'Mês atual',
-                        ).animate().fade(duration: 400.ms, delay: 50.ms).slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut),
+                        ).animate().fade(duration: 400.ms, delay: 50.ms).slideY(
+                            begin: 0.1,
+                            end: 0,
+                            duration: 400.ms,
+                            curve: Curves.easeOut),
                         _buildSummaryCard(
                           'Gastos Totais',
                           totalExpenses,
                           LucideIcons.trendingDown,
                           const Color(0xFFEF4444),
                           'Mês atual',
-                        ).animate().fade(duration: 400.ms, delay: 100.ms).slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut),
+                        )
+                            .animate()
+                            .fade(duration: 400.ms, delay: 100.ms)
+                            .slideY(
+                                begin: 0.1,
+                                end: 0,
+                                duration: 400.ms,
+                                curve: Curves.easeOut),
                         _buildSummaryCard(
                           'Saldo',
                           balance,
                           LucideIcons.dollarSign,
                           const Color(0xFF3B82F6),
                           'Mês atual',
-                        ).animate().fade(duration: 400.ms, delay: 150.ms).slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut),
+                        )
+                            .animate()
+                            .fade(duration: 400.ms, delay: 150.ms)
+                            .slideY(
+                                begin: 0.1,
+                                end: 0,
+                                duration: 400.ms,
+                                curve: Curves.easeOut),
                         _buildSummaryCard(
                           'Economia',
                           savings,
                           LucideIcons.piggyBank,
                           const Color(0xFFA855F7),
                           'Mês atual',
-                        ).animate().fade(duration: 400.ms, delay: 200.ms).slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut),
+                        )
+                            .animate()
+                            .fade(duration: 400.ms, delay: 200.ms)
+                            .slideY(
+                                begin: 0.1,
+                                end: 0,
+                                duration: 400.ms,
+                                curve: Curves.easeOut),
                       ],
                     );
                   },
@@ -118,23 +149,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ? Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(child: _buildPieChartCard(categoryBreakdown, totalExpenses)),
+                              Expanded(
+                                  child: _buildPieChartCard(
+                                      categoryBreakdown, totalExpenses)),
                               const SizedBox(width: 24),
                               Expanded(child: _buildBarChartCard(evolucaoList)),
                             ],
                           )
                         : Column(
                             children: [
-                              _buildPieChartCard(categoryBreakdown, totalExpenses),
+                              _buildPieChartCard(
+                                  categoryBreakdown, totalExpenses),
                               const SizedBox(height: 24),
                               _buildBarChartCard(evolucaoList),
                             ],
                           );
                   },
-                ).animate().fade(duration: 400.ms, delay: 250.ms).slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut),
+                ).animate().fade(duration: 400.ms, delay: 250.ms).slideY(
+                    begin: 0.1,
+                    end: 0,
+                    duration: 400.ms,
+                    curve: Curves.easeOut),
 
                 const SizedBox(height: 24),
-                _buildLineChartCard(evolucaoList).animate().fade(duration: 400.ms, delay: 300.ms).slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut),
+                _buildLineChartCard(evolucaoList)
+                    .animate()
+                    .fade(duration: 400.ms, delay: 300.ms)
+                    .slideY(
+                        begin: 0.1,
+                        end: 0,
+                        duration: 400.ms,
+                        curve: Curves.easeOut),
               ],
             ),
           );
@@ -143,7 +188,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildSummaryCard(String title, double amount, IconData icon, Color iconColor, String subtitle) {
+  Widget _buildSummaryCard(String title, double amount, IconData icon,
+      Color iconColor, String subtitle) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -154,7 +200,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                Text(title,
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
                 Icon(icon, color: iconColor, size: 20),
               ],
             ),
@@ -168,7 +215,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             Text(
               subtitle,
-              style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color, fontSize: 12),
+              style: TextStyle(
+                  color: Theme.of(context).textTheme.bodySmall?.color,
+                  fontSize: 12),
             ),
           ],
         ),
@@ -176,14 +225,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildPieChartCard(List<dynamic> categoryBreakdown, double totalExpenses) {
+  Widget _buildPieChartCard(
+      List<dynamic> categoryBreakdown, double totalExpenses) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Gastos por Categoria', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text('Gastos por Categoria',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 24),
             SizedBox(
               height: 250,
@@ -197,14 +248,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           final value = (item['amount'] as num).toDouble();
                           String hexColor = item['colorHex'] as String;
                           if (!hexColor.startsWith('#')) hexColor = '#9E9E9E';
-                          final color = Color(int.parse(hexColor.replaceFirst('#', '0xFF')));
-                          
+                          final color = Color(
+                              int.parse(hexColor.replaceFirst('#', '0xFF')));
+
                           return PieChartSectionData(
                             color: color,
                             value: value,
-                            title: '${(item['percentage'] as num).toStringAsFixed(0)}%',
+                            title:
+                                '${(item['percentage'] as num).toStringAsFixed(0)}%',
                             radius: 50,
-                            titleStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                            titleStyle: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white),
                           );
                         }).toList(),
                       ),
@@ -224,7 +280,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (r > maxY) maxY = r;
       if (d > maxY) maxY = d;
     }
-    maxY = maxY * 1.2;  
+    maxY = maxY * 1.2;
     if (maxY > 0) {
       double interval = maxY > 1000 ? 500 : (maxY > 100 ? 100 : 50);
       maxY = (maxY / interval).ceil() * interval;
@@ -237,8 +293,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
       return BarChartGroupData(
         x: idx,
         barRods: [
-          BarChartRodData(toY: (item['receitas'] as num).toDouble(), color: const Color(0xFF10B981)),
-          BarChartRodData(toY: (item['despesas'] as num).toDouble(), color: const Color(0xFFEF4444)),
+          BarChartRodData(
+              toY: (item['receitas'] as num).toDouble(),
+              color: const Color(0xFF10B981)),
+          BarChartRodData(
+              toY: (item['despesas'] as num).toDouble(),
+              color: const Color(0xFFEF4444)),
         ],
       );
     }).toList();
@@ -249,7 +309,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Receita vs Gastos Mensais', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text('Receita vs Gastos Mensais',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 24),
             SizedBox(
               height: 250,
@@ -260,18 +321,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         maxY: maxY,
                         barGroups: barGroups,
                         borderData: FlBorderData(show: false),
-                        gridData: FlGridData(show: true, drawVerticalLine: false),
+                        gridData:
+                            FlGridData(show: true, drawVerticalLine: false),
                         titlesData: FlTitlesData(
                           bottomTitles: AxisTitles(
                             sideTitles: SideTitles(
                               showTitles: true,
                               getTitlesWidget: (value, meta) {
-                                if (value.toInt() >= 0 && value.toInt() < evolucaoList.length) {
-                                  final mesStr = evolucaoList[value.toInt()]['mes'] as String;
+                                if (value.toInt() >= 0 &&
+                                    value.toInt() < evolucaoList.length) {
+                                  final mesStr = evolucaoList[value.toInt()]
+                                      ['mes'] as String;
                                   final parts = mesStr.split('-');
                                   final month = int.tryParse(parts[1]) ?? 1;
-                                  final title = DateFormat('MMM', 'pt_BR').format(DateTime(2000, month));
-                                  return Padding(padding: const EdgeInsets.only(top: 8), child: Text(title, style: const TextStyle(fontSize: 12)));
+                                  final title = DateFormat('MMM', 'pt_BR')
+                                      .format(DateTime(2000, month));
+                                  return Padding(
+                                      padding: const EdgeInsets.only(top: 8),
+                                      child: Text(title,
+                                          style:
+                                              const TextStyle(fontSize: 12)));
                                 }
                                 return const Text('');
                               },
@@ -283,8 +352,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               reservedSize: 42,
                             ),
                           ),
-                          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                          topTitles: const AxisTitles(
+                              sideTitles: SideTitles(showTitles: false)),
+                          rightTitles: const AxisTitles(
+                              sideTitles: SideTitles(showTitles: false)),
                         ),
                       ),
                     ),
@@ -303,7 +374,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (s > maxY) maxY = s;
       if (s < minY) minY = s;
     }
-    maxY = maxY * 1.2; 
+    maxY = maxY * 1.2;
     if (maxY > 0) {
       double interval = maxY > 1000 ? 500 : (maxY > 100 ? 100 : 50);
       maxY = (maxY / interval).ceil() * interval;
@@ -323,7 +394,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Saldo ao Longo do Tempo', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text('Saldo ao Longo do Tempo',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 24),
             SizedBox(
               height: 300,
@@ -333,18 +405,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       LineChartData(
                         maxY: maxY,
                         minY: minY,
-                        gridData: FlGridData(show: true, drawVerticalLine: false),
+                        gridData:
+                            FlGridData(show: true, drawVerticalLine: false),
                         titlesData: FlTitlesData(
                           bottomTitles: AxisTitles(
                             sideTitles: SideTitles(
                               showTitles: true,
                               getTitlesWidget: (value, meta) {
-                                if (value.toInt() >= 0 && value.toInt() < evolucaoList.length) {
-                                  final mesStr = evolucaoList[value.toInt()]['mes'] as String;
+                                if (value.toInt() >= 0 &&
+                                    value.toInt() < evolucaoList.length) {
+                                  final mesStr = evolucaoList[value.toInt()]
+                                      ['mes'] as String;
                                   final parts = mesStr.split('-');
                                   final month = int.tryParse(parts[1]) ?? 1;
-                                  final title = DateFormat('MMM', 'pt_BR').format(DateTime(2000, month));
-                                  return Padding(padding: const EdgeInsets.only(top: 8), child: Text(title, style: const TextStyle(fontSize: 12)));
+                                  final title = DateFormat('MMM', 'pt_BR')
+                                      .format(DateTime(2000, month));
+                                  return Padding(
+                                      padding: const EdgeInsets.only(top: 8),
+                                      child: Text(title,
+                                          style:
+                                              const TextStyle(fontSize: 12)));
                                 }
                                 return const Text('');
                               },
@@ -357,8 +437,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               reservedSize: 42,
                             ),
                           ),
-                          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                          topTitles: const AxisTitles(
+                              sideTitles: SideTitles(showTitles: false)),
+                          rightTitles: const AxisTitles(
+                              sideTitles: SideTitles(showTitles: false)),
                         ),
                         borderData: FlBorderData(show: false),
                         lineBarsData: [
