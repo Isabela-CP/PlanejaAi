@@ -1,17 +1,26 @@
+import 'category.dart';
+import 'transaction.dart';
+
 class Budget {
   final String id;
-  final String category;
+  final String categoryId;
+  final AppCategory? categoryObj;
   final double monthlyLimit;
   final double spent;
-  final DateTime createdAt;
+  final DateTime monthYear;
+  final int resetDay;
 
   Budget({
     required this.id,
-    required this.category,
+    required this.categoryId,
+    this.categoryObj,
     required this.monthlyLimit,
     required this.spent,
-    required this.createdAt,
+    required this.monthYear,
+    this.resetDay = 1,
   });
+
+  String get category => categoryObj?.name ?? 'Sem categoria';
 
   double get progressPercentage {
     if (monthlyLimit == 0) return 100.0;
@@ -20,17 +29,87 @@ class Budget {
 
   double get monthlyRemaining => monthlyLimit - spent;
 
-  int get daysLeftInMonth {
+  DateTime get cycleStartDate {
     final now = DateTime.now();
-    final nextMonth = DateTime(now.year, now.month + 1, 1);
-    return nextMonth.difference(now).inDays;
+    if (now.day < resetDay) {
+      int prevMonth = now.month == 1 ? 12 : now.month - 1;
+      int prevYear = now.month == 1 ? now.year - 1 : now.year;
+      return DateTime(prevYear, prevMonth, resetDay);
+    } else {
+      return DateTime(now.year, now.month, resetDay);
+    }
   }
 
-  double get weeklyRemaining {
-    final daysLeft = daysLeftInMonth;
-    final weeksLeft = daysLeft / 7.0;
-    if (weeksLeft <= 0) return monthlyRemaining;
-    return monthlyRemaining / weeksLeft;
+  DateTime get cycleEndDate {
+    final start = cycleStartDate;
+    int nextMonth = start.month == 12 ? 1 : start.month + 1;
+    int nextYear = start.month == 12 ? start.year + 1 : start.year;
+    return DateTime(nextYear, nextMonth, resetDay).subtract(const Duration(seconds: 1));
+  }
+
+  int get daysLeftInPeriod {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final end = cycleEndDate;
+    final diff = end.difference(today).inDays;
+    return diff < 0 ? 0 : diff;
+  }
+
+  // Compatibilidade com o layout existente
+  int get daysLeftInMonth => daysLeftInPeriod;
+
+  Map<String, double> getWeeklyDetails(List<Transaction> allTransactions) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final start = cycleStartDate;
+    final end = cycleEndDate;
+
+    // Filtrar transações de despesa da categoria deste orçamento que estejam no ciclo atual
+    final categoryTxs = allTransactions.where((tx) {
+      if (tx.category?.id != categoryId) return false;
+      if (tx.type != 'expense') return false;
+      
+      final txDate = tx.date;
+      return (txDate.isAfter(start) || txDate.isAtSameMomentAs(start)) &&
+             (txDate.isBefore(end) || txDate.isAtSameMomentAs(end));
+    }).toList();
+
+    // Duração total do ciclo em dias
+    final totalDays = end.difference(start).inDays + 1;
+    final totalWeeks = totalDays / 7.0;
+
+    // Dias transcorridos desde o início do ciclo
+    final daysSinceStart = today.difference(start).inDays;
+    final currentWeekIndex = (daysSinceStart / 7).floor();
+
+    // Início da semana corrente
+    final weekStart = start.add(Duration(days: currentWeekIndex * 7));
+
+    double spentBefore = 0.0;
+    double spentCurrent = 0.0;
+
+    for (final tx in categoryTxs) {
+      if (tx.date.isBefore(weekStart)) {
+        spentBefore += tx.amount;
+      } else {
+        spentCurrent += tx.amount;
+      }
+    }
+
+    final weeksRemaining = totalWeeks - currentWeekIndex;
+    final remainingLimitBefore = monthlyLimit - spentBefore;
+    
+    // Limite disponível para esta semana
+    final weeklyLimit = weeksRemaining > 0 ? remainingLimitBefore / weeksRemaining : remainingLimitBefore;
+    
+    // Saldo semanal restante (pode ser negativo se gastou a mais nesta semana)
+    final weeklyRemaining = weeklyLimit - spentCurrent;
+
+    return {
+      'weeklyLimit': weeklyLimit,
+      'spentCurrentWeek': spentCurrent,
+      'weeklyRemaining': weeklyRemaining,
+    };
   }
 
   String get statusLabel {
@@ -39,4 +118,29 @@ class Budget {
     if (ratio >= 0.8) return 'Atenção';
     return 'Dentro do limite';
   }
+
+  factory Budget.fromJson(Map<String, dynamic> json) {
+    return Budget(
+      id: json['id'] as String,
+      categoryId: json['categoryId'] as String? ?? '',
+      categoryObj: json['category'] != null
+          ? AppCategory.fromJson(json['category'] as Map<String, dynamic>)
+          : null,
+      monthlyLimit: (json['monthlyLimit'] as num?)?.toDouble() ?? 0.0,
+      spent: (json['spent'] as num?)?.toDouble() ?? 0.0,
+      monthYear: json['monthYear'] != null
+          ? DateTime.parse(json['monthYear'] as String)
+          : DateTime.now(),
+      resetDay: json['resetDay'] as int? ?? 1,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'categoryId': categoryId,
+        'monthlyLimit': monthlyLimit,
+        'spent': spent,
+        'monthYear': monthYear.toIso8601String(),
+        'resetDay': resetDay,
+      };
 }

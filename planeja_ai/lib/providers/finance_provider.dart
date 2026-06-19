@@ -1,22 +1,416 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../core/models/category.dart';
+import '../core/models/transaction.dart';
+import '../core/models/budget.dart';
+import '../core/models/goal.dart';
+import '../core/services/api_service.dart';
 
 class FinanceProvider extends ChangeNotifier {
-  double _balance = 24500.0;
-  double _income = 5200.0;
-  double _expenses = 2700.0;
+  final ApiService _apiService = ApiService();
+
+  List<AppCategory> _transactionCategories = [];
+  List<AppCategory> _goalCategories = [];
+  List<Transaction> _transactions = [];
+  List<Budget> _budgets = [];
+  List<Goal> _goals = [];
+  bool _isLoadingCategories = false;
+  bool _isLoadingTransactions = false;
+  bool _isLoadingBudgets = false;
+  bool _isLoadingGoals = false;
+
+  // Relatórios State
+  Map<String, dynamic>? _reportSummary;
+  List<dynamic>? _reportCategoryBreakdown;
+  List<dynamic>? _reportBalanceEvolution;
+  bool _isLoadingReports = false;
+
+  double _balance = 0.0;
+  double _income = 0.0;
+  double _expenses = 0.0;
+
+  List<AppCategory> get transactionCategories => List.unmodifiable(_transactionCategories);
+  List<AppCategory> get goalCategories => List.unmodifiable(_goalCategories);
+  List<AppCategory> get categories => transactionCategories;
+  List<Transaction> get transactions => List.unmodifiable(_transactions);
+  List<Budget> get budgets => List.unmodifiable(_budgets);
+  List<Goal> get goals => List.unmodifiable(_goals);
+  bool get isLoadingCategories => _isLoadingCategories;
+  bool get isLoadingTransactions => _isLoadingTransactions;
+  bool get isLoadingBudgets => _isLoadingBudgets;
+  bool get isLoadingGoals => _isLoadingGoals;
+
+  Map<String, dynamic>? get reportSummary => _reportSummary;
+  List<dynamic>? get reportCategoryBreakdown => _reportCategoryBreakdown;
+  List<dynamic>? get reportBalanceEvolution => _reportBalanceEvolution;
+  bool get isLoadingReports => _isLoadingReports;
 
   double get balance => _balance;
   double get income => _income;
   double get expenses => _expenses;
 
-  void addTransaction(double amount, bool isIncome) {
-    if (isIncome) {
-      _income += amount;
-      _balance += amount;
-    } else {
-      _expenses += amount;
-      _balance -= amount;
-    }
+  Future<void> fetchCategories({String type = 'transaction'}) async {
+    _isLoadingCategories = true;
     notifyListeners();
+    try {
+      final response = await _apiService.get('/categories?type=$type');
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body) as List;
+        final loaded = data
+            .map((e) => AppCategory.fromJson(e as Map<String, dynamic>))
+            .toList();
+        
+        if (type == 'goal') {
+          _goalCategories = loaded;
+        } else {
+          _transactionCategories = loaded;
+        }
+      }
+    } catch (e) {
+      debugPrint('fetchCategories error: $e');
+    } finally {
+      _isLoadingCategories = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchAllCategories() async {
+    await Future.wait([
+      fetchCategories(type: 'transaction'),
+      fetchCategories(type: 'goal'),
+    ]);
+  }
+
+  Future<void> addCategory(AppCategory category) async {
+    final response = await _apiService.post(
+      '/categories',
+      body: category.toJson(),
+    );
+    if (response.statusCode == 201) {
+      final newCat = AppCategory.fromJson(json.decode(response.body) as Map<String, dynamic>);
+      if (newCat.type == 'goal') {
+        _goalCategories.add(newCat);
+      } else {
+        _transactionCategories.add(newCat);
+      }
+      notifyListeners();
+    } else {
+      final msg = (json.decode(response.body) as Map<String, dynamic>)['error'] ??
+          'Erro ao criar categoria';
+      throw Exception(msg);
+    }
+  }
+
+  Future<void> updateCategory(String id, AppCategory updated) async {
+    final response = await _apiService.put(
+      '/categories/$id',
+      body: updated.toJson(),
+    );
+    if (response.statusCode == 200) {
+      final newCat = AppCategory.fromJson(json.decode(response.body) as Map<String, dynamic>);
+      
+      if (newCat.type == 'goal') {
+        final idx = _goalCategories.indexWhere((c) => c.id == id);
+        if (idx != -1) {
+          _goalCategories[idx] = newCat;
+          notifyListeners();
+        }
+      } else {
+        final idx = _transactionCategories.indexWhere((c) => c.id == id);
+        if (idx != -1) {
+          _transactionCategories[idx] = newCat;
+          notifyListeners();
+        }
+      }
+    } else {
+      final msg = (json.decode(response.body) as Map<String, dynamic>)['error'] ??
+          'Erro ao atualizar categoria';
+      throw Exception(msg);
+    }
+  }
+
+  Future<void> deleteCategory(String id) async {
+    final response = await _apiService.delete('/categories/$id');
+    if (response.statusCode == 200) {
+      _transactionCategories.removeWhere((c) => c.id == id);
+      _goalCategories.removeWhere((c) => c.id == id);
+      notifyListeners();
+    } else {
+      final msg = (json.decode(response.body) as Map<String, dynamic>)['error'] ??
+          'Erro ao remover categoria';
+      throw Exception(msg);
+    }
+  }
+
+  Future<void> fetchTransactions() async {
+    _isLoadingTransactions = true;
+    notifyListeners();
+    try {
+      final response = await _apiService.get('/transactions');
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body) as List;
+        _transactions = data
+            .map((e) => Transaction.fromJson(e as Map<String, dynamic>))
+            .toList();
+        
+        _recalculateBalances();
+      }
+    } catch (e) {
+      debugPrint('fetchTransactions error: $e');
+    } finally {
+      _isLoadingTransactions = false;
+      notifyListeners();
+    }
+  }
+
+  void _recalculateBalances() {
+    double inc = 0.0;
+    double exp = 0.0;
+    for (var tx in _transactions) {
+      if (tx.type == 'income') {
+        inc += tx.amount;
+      } else {
+        exp += tx.amount;
+      }
+    }
+    _income = inc;
+    _expenses = exp;
+    _balance = inc - exp;
+  }
+
+  Future<void> addTransaction(Transaction tx) async {
+    final response = await _apiService.post(
+      '/transactions',
+      body: tx.toJson(),
+    );
+    if (response.statusCode == 201) {
+      final newTx = Transaction.fromJson(json.decode(response.body) as Map<String, dynamic>);
+      _transactions.insert(0, newTx);
+      _recalculateBalances();
+      notifyListeners();
+      fetchBudgets();
+      fetchReportsData(); // Update reports after adding tx
+    } else {
+      final msg = (json.decode(response.body) as Map<String, dynamic>)['error'] ??
+          'Erro ao criar transação';
+      throw Exception(msg);
+    }
+  }
+
+  Future<void> deleteTransaction(String id) async {
+    final response = await _apiService.delete('/transactions/$id');
+    if (response.statusCode == 200) {
+      _transactions.removeWhere((tx) => tx.id == id);
+      _recalculateBalances();
+      notifyListeners();
+      fetchBudgets();
+      fetchReportsData(); // Update reports after deleting tx
+    } else {
+      final msg = (json.decode(response.body) as Map<String, dynamic>)['error'] ??
+          'Erro ao remover transação';
+      throw Exception(msg);
+    }
+  }
+
+  Future<void> fetchBudgets({DateTime? date}) async {
+    _isLoadingBudgets = true;
+    notifyListeners();
+    try {
+      final queryDate = date ?? DateTime.now();
+      final dateStr = "${queryDate.year.toString().padLeft(4, '0')}-${queryDate.month.toString().padLeft(2, '0')}-01";
+      final response = await _apiService.get('/budgets?date=$dateStr');
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body) as List;
+        _budgets = data
+            .map((e) => Budget.fromJson(e as Map<String, dynamic>))
+            .toList();
+      }
+    } catch (e) {
+      debugPrint('fetchBudgets error: $e');
+    } finally {
+      _isLoadingBudgets = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> addBudget({
+    required String categoryId,
+    required double limit,
+    required int resetDay,
+    DateTime? date,
+  }) async {
+    final queryDate = date ?? DateTime.now();
+    final dateStr = "${queryDate.year.toString().padLeft(4, '0')}-${queryDate.month.toString().padLeft(2, '0')}-01";
+    final response = await _apiService.post(
+      '/budgets',
+      body: {
+        'categoryId': categoryId,
+        'monthlyLimit': limit,
+        'resetDay': resetDay,
+        'date': dateStr,
+      },
+    );
+    if (response.statusCode == 201) {
+      final newBudget = Budget.fromJson(json.decode(response.body) as Map<String, dynamic>);
+      _budgets.add(newBudget);
+      notifyListeners();
+    } else {
+      final msg = (json.decode(response.body) as Map<String, dynamic>)['error'] ??
+          'Erro ao criar orçamento';
+      throw Exception(msg);
+    }
+  }
+
+  Future<void> updateBudget(
+    String id, {
+    double? limit,
+    int? resetDay,
+  }) async {
+    final body = {
+      if (limit != null) 'monthlyLimit': limit,
+      if (resetDay != null) 'resetDay': resetDay,
+    };
+    final response = await _apiService.put(
+      '/budgets/$id',
+      body: body,
+    );
+    if (response.statusCode == 200) {
+      final updatedBudget = Budget.fromJson(json.decode(response.body) as Map<String, dynamic>);
+      final idx = _budgets.indexWhere((b) => b.id == id);
+      if (idx != -1) {
+        _budgets[idx] = updatedBudget;
+        notifyListeners();
+      }
+    } else {
+      final msg = (json.decode(response.body) as Map<String, dynamic>)['error'] ??
+          'Erro ao atualizar orçamento';
+      throw Exception(msg);
+    }
+  }
+
+  Future<void> deleteBudget(String id) async {
+    final response = await _apiService.delete('/budgets/$id');
+    if (response.statusCode == 200) {
+      _budgets.removeWhere((b) => b.id == id);
+      notifyListeners();
+    } else {
+      final msg = (json.decode(response.body) as Map<String, dynamic>)['error'] ??
+          'Erro ao remover orçamento';
+      throw Exception(msg);
+    }
+  }
+
+  Future<void> fetchGoals() async {
+    _isLoadingGoals = true;
+    notifyListeners();
+    try {
+      final response = await _apiService.get('/goals');
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body) as List;
+        _goals = data
+            .map((e) => Goal.fromJson(e as Map<String, dynamic>))
+            .toList();
+      }
+    } catch (e) {
+      debugPrint('fetchGoals error: $e');
+    } finally {
+      _isLoadingGoals = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> addGoal(Goal goal) async {
+    final response = await _apiService.post(
+      '/goals',
+      body: goal.toJson(),
+    );
+    if (response.statusCode == 201) {
+      final newGoal = Goal.fromJson(json.decode(response.body) as Map<String, dynamic>);
+      _goals.add(newGoal);
+      notifyListeners();
+    } else {
+      final msg = (json.decode(response.body) as Map<String, dynamic>)['error'] ??
+          'Erro ao criar meta';
+      throw Exception(msg);
+    }
+  }
+
+  Future<void> updateGoal(
+    String id, {
+    String? name,
+    double? targetValue,
+    double? currentValue,
+    DateTime? deadline,
+    String? categoryId,
+  }) async {
+    final body = {
+      if (name != null) 'name': name,
+      if (targetValue != null) 'targetValue': targetValue,
+      if (currentValue != null) 'currentValue': currentValue,
+      if (deadline != null) 'deadline': deadline.toIso8601String().split('T')[0],
+      if (categoryId != null) 'categoryId': categoryId == "" ? "" : categoryId,
+    };
+    final response = await _apiService.put(
+      '/goals/$id',
+      body: body,
+    );
+    if (response.statusCode == 200) {
+      final updatedGoal = Goal.fromJson(json.decode(response.body) as Map<String, dynamic>);
+      final idx = _goals.indexWhere((g) => g.id == id);
+      if (idx != -1) {
+        _goals[idx] = updatedGoal;
+        notifyListeners();
+      }
+    } else {
+      final msg = (json.decode(response.body) as Map<String, dynamic>)['error'] ??
+          'Erro ao atualizar meta';
+      throw Exception(msg);
+    }
+  }
+
+  Future<void> deleteGoal(String id) async {
+    final response = await _apiService.delete('/goals/$id');
+    if (response.statusCode == 200) {
+      _goals.removeWhere((g) => g.id == id);
+      notifyListeners();
+    } else {
+      final msg = (json.decode(response.body) as Map<String, dynamic>)['error'] ??
+          'Erro ao remover meta';
+      throw Exception(msg);
+    }
+  }
+
+  Future<void> fetchReportsData({DateTime? startDate, DateTime? endDate}) async {
+    _isLoadingReports = true;
+    notifyListeners();
+
+    try {
+      String query = '';
+      if (startDate != null && endDate != null) {
+        final startStr = startDate.toIso8601String().split('T')[0];
+        final endStr = endDate.toIso8601String().split('T')[0];
+        query = '?start_date=$startStr&end_date=$endStr';
+      }
+
+      final summaryRes = await _apiService.get('/relatorios/resumo$query');
+      if (summaryRes.statusCode == 200) {
+        _reportSummary = json.decode(summaryRes.body);
+      }
+
+      final catRes = await _apiService.get('/relatorios/por-categoria$query');
+      if (catRes.statusCode == 200) {
+        _reportCategoryBreakdown = json.decode(catRes.body);
+      }
+
+      final evolRes = await _apiService.get('/relatorios/evolucao-saldo$query');
+      if (evolRes.statusCode == 200) {
+        _reportBalanceEvolution = json.decode(evolRes.body);
+      }
+    } catch (e) {
+      debugPrint('fetchReportsData error: $e');
+    } finally {
+      _isLoadingReports = false;
+      notifyListeners();
+    }
   }
 }

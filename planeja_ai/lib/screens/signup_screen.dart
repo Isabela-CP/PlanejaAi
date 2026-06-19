@@ -6,23 +6,24 @@ import '../providers/auth_provider.dart';
 import '../widgets/logo.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class SignupScreen extends StatefulWidget {
+  const SignupScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<SignupScreen> createState() => _SignupScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _SignupScreenState extends State<SignupScreen> {
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _showPassword = false;
   bool _isLoading = false;
   String? _error;
 
-  void _handleLogin() async {
-    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
-      setState(() => _error = 'Email e Senha são obrigatórios');
+  void _handleSignup() async {
+    if (_nameController.text.isEmpty || _emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      setState(() => _error = 'Todos os campos são obrigatórios');
       return;
     }
 
@@ -32,14 +33,16 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      await context.read<AuthProvider>().login(
+      await context.read<AuthProvider>().signup(
             _emailController.text,
             _passwordController.text,
+            _nameController.text,
           );
       if (mounted) context.go('/dashboard');
     } catch (e) {
       if (mounted) {
         setState(() {
+          // Extraindo a mensagem limpa da exceção gerada pelo provider
           final msg = e.toString();
           _error = msg.startsWith('Exception: ') ? msg.substring(11) : msg;
         });
@@ -76,7 +79,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const Logo(size: 48, showText: false).animate().fade().scale(),
                     const SizedBox(height: 24),
                     Text(
-                      'Bem-vindo ao Planeja.AI',
+                      'Crie sua conta',
                       style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
@@ -84,7 +87,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ).animate().fade(delay: 100.ms).slideY(),
                     const SizedBox(height: 8),
                     Text(
-                      'Entre na sua conta',
+                      'Comece a organizar suas finanças',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: Theme.of(context).colorScheme.secondary,
                           ),
@@ -118,6 +121,16 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ).animate().fadeIn(),
                     TextField(
+                      controller: _nameController,
+                      keyboardType: TextInputType.name,
+                      decoration: const InputDecoration(
+                        labelText: 'Nome',
+                        hintText: 'Digite seu nome completo',
+                        prefixIcon: Icon(LucideIcons.user, size: 20),
+                      ),
+                    ).animate().fade(delay: 300.ms).slideX(),
+                    const SizedBox(height: 16),
+                    TextField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       decoration: const InputDecoration(
@@ -125,14 +138,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         hintText: 'Digite seu email',
                         prefixIcon: Icon(LucideIcons.mail, size: 20),
                       ),
-                    ).animate().fade(delay: 300.ms).slideX(),
+                    ).animate().fade(delay: 400.ms).slideX(),
                     const SizedBox(height: 16),
                     TextField(
                       controller: _passwordController,
                       obscureText: !_showPassword,
                       decoration: InputDecoration(
                         labelText: 'Senha',
-                        hintText: 'Digite sua senha',
+                        hintText: 'Crie uma senha',
                         prefixIcon: const Icon(LucideIcons.lock, size: 20),
                         suffixIcon: IconButton(
                           icon: Icon(
@@ -144,12 +157,12 @@ class _LoginScreenState extends State<LoginScreen> {
                           },
                         ),
                       ),
-                    ).animate().fade(delay: 400.ms).slideX(),
+                    ).animate().fade(delay: 500.ms).slideX(),
                     const SizedBox(height: 32),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: _isLoading ? null : _handleLogin,
+                        onPressed: _isLoading ? null : _handleSignup,
                         child: _isLoading
                             ? const SizedBox(
                                 height: 20,
@@ -159,14 +172,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                   color: Colors.white,
                                 ),
                               )
-                            : const Text('Entrar'),
+                            : const Text('Cadastrar'),
                       ),
-                    ).animate().fade(delay: 500.ms).scale(),
+                    ).animate().fade(delay: 600.ms).scale(),
                     const SizedBox(height: 16),
                     TextButton(
-                      onPressed: () => context.go('/signup'),
-                      child: const Text('Não tem uma conta? Cadastre-se'),
-                    ).animate().fade(delay: 600.ms),
+                      onPressed: () => context.go('/login'),
+                      child: const Text('Já tem uma conta? Entre aqui'),
+                    ).animate().fade(delay: 700.ms),
                   ],
                 ),
               ),
