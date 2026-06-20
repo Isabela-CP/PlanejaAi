@@ -7,8 +7,14 @@ import '../providers/finance_provider.dart';
 class GoalCard extends StatelessWidget {
   final Goal goal;
   final VoidCallback onDelete;
+  final Function(Goal) onEdit;
 
-  const GoalCard({Key? key, required this.goal, required this.onDelete}) : super(key: key);
+  const GoalCard({
+    Key? key,
+    required this.goal,
+    required this.onDelete,
+    required this.onEdit,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -72,33 +78,44 @@ class GoalCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline, size: 20),
-                  color: theme.colorScheme.error,
-                  tooltip: 'Deletar',
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('Excluir Meta'),
-                        content: Text('Tem certeza que deseja excluir "${goal.name}"? Esta ação não pode ser desfeita.'),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            child: const Text('Cancelar'),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined, size: 20),
+                      color: theme.colorScheme.primary,
+                      tooltip: 'Editar',
+                      onPressed: () => onEdit(goal),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, size: 20),
+                      color: theme.colorScheme.error,
+                      tooltip: 'Deletar',
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Excluir Meta'),
+                            content: Text('Tem certeza que deseja excluir "${goal.name}"? Esta ação não pode ser desfeita.'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.of(context).pop(),
+                                child: const Text('Cancelar'),
+                              ),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(backgroundColor: theme.colorScheme.error),
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                  onDelete();
+                                },
+                                child: const Text('Excluir'),
+                              ),
+                            ],
                           ),
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(backgroundColor: theme.colorScheme.error),
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                              onDelete();
-                            },
-                            child: const Text('Excluir'),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ],
             ),

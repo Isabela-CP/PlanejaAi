@@ -2,6 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
+<<<<<<< Updated upstream
+=======
+  // Cores mais tranquilas da branch feature/relatorios-perfil-e-tema
+  static const Color _primaryLight = Color(0xFFD4A017); // Amarelo/Ouro suave
+  static const Color _primaryDark = Color(0xFFF2C230); // Amarelo original
+  
+  static const Color _bgLight = Color(0xFFF5F0E6); // Bege/Cinza quente suave
+  static const Color _surfaceLight = Color(0xFFFFFDF9); // Off-white aconchegante
+  
+  static const Color _bgDark = Color(0xFF202124); // Cinza escuro Google
+  static const Color _surfaceDark = Color(0xFF292A2D); // Cinza cards/menu
+
+>>>>>>> Stashed changes
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,

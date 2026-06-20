@@ -15,6 +15,7 @@ class GoalsScreen extends StatefulWidget {
 
 class _GoalsScreenState extends State<GoalsScreen> {
   bool _showForm = false;
+  Goal? _goalToEdit;
 
   @override
   void initState() {
@@ -28,12 +29,23 @@ class _GoalsScreenState extends State<GoalsScreen> {
   void _toggleForm() {
     setState(() {
       _showForm = !_showForm;
+      if (!_showForm) {
+        _goalToEdit = null;
+      }
+    });
+  }
+
+  void _handleEditGoal(Goal goal) {
+    setState(() {
+      _goalToEdit = goal;
+      _showForm = true;
     });
   }
 
   void _handleAddGoal(Goal newGoal) {
     setState(() {
       _showForm = false;
+      _goalToEdit = null;
     });
   }
 
@@ -77,8 +89,27 @@ class _GoalsScreenState extends State<GoalsScreen> {
                     backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Theme.of(context).colorScheme.onPrimary,
                   ),
+<<<<<<< Updated upstream
                 ).animate().fade().scale(),
               ],
+=======
+                  const SizedBox(height: 24),
+                  if (_showForm)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 24),
+                      child: GoalForm(
+                        onAddGoal: _handleAddGoal,
+                        onCancel: _toggleForm,
+                        goalToEdit: _goalToEdit,
+                      ).animate().fade(duration: 300.ms).slideY(
+                          begin: -0.1,
+                          end: 0,
+                          duration: 300.ms,
+                          curve: Curves.easeOut),
+                    ),
+                ],
+              ),
+>>>>>>> Stashed changes
             ),
             const SizedBox(height: 24),
 
@@ -141,6 +172,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
                           return GoalCard(
                             goal: goals[index],
                             onDelete: () => _handleDeleteGoal(goals[index].id),
+                            onEdit: _handleEditGoal,
                           )
                           .animate()
                           .fade(duration: 400.ms, delay: (50 * index).ms)

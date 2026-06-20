@@ -64,6 +64,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   bool _showCategoryOptions = false;
   bool _isDialogOpen = false;
   DateTime _date = DateTime.now();
+  Transaction? _transactionToEdit;
+
 
   bool _isLoading = false;
 
@@ -149,6 +151,19 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     }
   }
 
+  void _handleEditTransaction(Transaction tx) {
+    setState(() {
+      _transactionToEdit = tx;
+      _showForm = true;
+      _type = tx.type;
+      _titleController.text = tx.title;
+      _amountController.text = tx.amount.toStringAsFixed(2).replaceAll('.', ',');
+      _descriptionController.text = tx.description;
+      _categoryController.text = tx.categoryName;
+      _date = tx.date;
+    });
+  }
+
   Future<void> _deleteTransaction(String id) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -221,14 +236,30 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     );
 
     try {
-      await provider.addTransaction(newTransaction);
+      if (_transactionToEdit != null) {
+        final updatedTx = _transactionToEdit!.copyWith(
+          title: titleText,
+          type: _type,
+          amount: amount,
+          categoryName: matched.id.isNotEmpty ? matched.name : categoryText,
+          category: matched.id.isNotEmpty ? matched : null,
+          date: _date,
+          description: _descriptionController.text,
+        );
+        await provider.updateTransaction(_transactionToEdit!.id, updatedTx);
+      } else {
+        await provider.addTransaction(newTransaction);
+      }
+
       setState(() {
         _showForm = false;
+        _transactionToEdit = null;
         _titleController.clear();
         _amountController.clear();
         _descriptionController.clear();
         _categoryController.clear();
         _showCategoryOptions = false;
+        _date = DateTime.now();
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -265,8 +296,19 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 ElevatedButton.icon(
                   onPressed: () => setState(() {
                     _showForm = !_showForm;
+<<<<<<< Updated upstream
                     _titleController.clear();
                     _categoryController.clear();
+=======
+                    if (!_showForm) {
+                      _transactionToEdit = null;
+                      _titleController.clear();
+                      _amountController.clear();
+                      _descriptionController.clear();
+                      _categoryController.text = 'Outros';
+                      _date = DateTime.now();
+                    }
+>>>>>>> Stashed changes
                     _showCategoryOptions = false;
                   }),
                   icon: const Icon(LucideIcons.plus, size: 16),
@@ -296,9 +338,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Nova Transação',
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        Text(
+                          _transactionToEdit != null ? 'Editar Transação' : 'Nova Transação',
+                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 24),
                         TextField(
@@ -536,14 +578,22 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                             ),
                             child: _isLoading
                                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                : const Text('Adicionar Transação'),
+                                : Text(_transactionToEdit != null ? 'Salvar Alterações' : 'Adicionar Transação'),
                           ),
                           const SizedBox(width: 16),
                           OutlinedButton(
                             onPressed: () => setState(() {
                               _showForm = false;
+                              _transactionToEdit = null;
                               _titleController.clear();
+<<<<<<< Updated upstream
                               _categoryController.clear();
+=======
+                              _amountController.clear();
+                              _descriptionController.clear();
+                              _categoryController.text = 'Outros';
+                              _date = DateTime.now();
+>>>>>>> Stashed changes
                               _showCategoryOptions = false;
                             }),
                             style: OutlinedButton.styleFrom(
@@ -604,6 +654,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                           itemCount: list.length,
                           separatorBuilder: (context, index) => const Divider(height: 1),
                           itemBuilder: (context, index) {
+                            final theme = Theme.of(context);
                             final t = list[index];
                             final isIncome = t.type == 'income';
                             final baseColor = isIncome ? const Color(0xFF10B981) : const Color(0xFFEF4444);
@@ -662,12 +713,43 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                             style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.bold),
                                           ),
                                         ),
+<<<<<<< Updated upstream
                                         const SizedBox(width: 8),
                                         Icon(LucideIcons.calendar, size: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
                                         const SizedBox(width: 4),
                                         Text(
                                           _formatDate.format(t.date),
                                           style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+=======
+                                        const SizedBox(height: 4),
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            SizedBox(
+                                              height: 28,
+                                              width: 28,
+                                              child: IconButton(
+                                                padding: EdgeInsets.zero,
+                                                iconSize: 16,
+                                                icon: const Icon(LucideIcons.edit3, color: Colors.grey),
+                                                hoverColor: theme.colorScheme.primary.withOpacity(0.1),
+                                                onPressed: () => _handleEditTransaction(t),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 4),
+                                            SizedBox(
+                                              height: 28,
+                                              width: 28,
+                                              child: IconButton(
+                                                padding: EdgeInsets.zero,
+                                                iconSize: 16,
+                                                icon: const Icon(LucideIcons.trash2, color: Colors.grey),
+                                                hoverColor: Colors.red.withOpacity(0.1),
+                                                onPressed: () => _deleteTransaction(t.id),
+                                              ),
+                                            ),
+                                          ],
+>>>>>>> Stashed changes
                                         ),
                                       ],
                                     ),

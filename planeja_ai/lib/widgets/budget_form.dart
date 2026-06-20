@@ -7,12 +7,14 @@ import 'category_dialog.dart';
 
 class BudgetForm extends StatefulWidget {
   final List<Budget> currentBudgets;
+  final Budget? budgetToEdit;
   final Function(String categoryId, double limit, int resetDay) onAddBudget;
   final VoidCallback onCancel;
 
   const BudgetForm({
     Key? key,
     required this.currentBudgets,
+    this.budgetToEdit,
     required this.onAddBudget,
     required this.onCancel,
   }) : super(key: key);
@@ -26,6 +28,16 @@ class _BudgetFormState extends State<BudgetForm> {
   String? _selectedCategoryId;
   final _limitController = TextEditingController();
   int _resetDay = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.budgetToEdit != null) {
+      _selectedCategoryId = widget.budgetToEdit!.categoryId;
+      _limitController.text = widget.budgetToEdit!.monthlyLimit.toStringAsFixed(2).replaceAll('.', ',');
+      _resetDay = widget.budgetToEdit!.resetDay;
+    }
+  }
 
   @override
   void dispose() {
@@ -58,7 +70,6 @@ class _BudgetFormState extends State<BudgetForm> {
       builder: (ctx) => const CategoryDialog(),
     ).then((result) {
       if (result == true) {
-        // Recarrega as categorias do provider
         Provider.of<FinanceProvider>(context, listen: false).fetchCategories();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -75,11 +86,24 @@ class _BudgetFormState extends State<BudgetForm> {
     final theme = Theme.of(context);
     final financeProvider = Provider.of<FinanceProvider>(context);
     
-    // Filtrar categorias de transação que já não tenham orçamento
     final availableCategories = financeProvider.transactionCategories.where((cat) {
-      return !widget.currentBudgets.any((b) => b.categoryId == cat.id);
+      return !widget.currentBudgets.any((b) => b.categoryId == cat.id) || 
+             (widget.budgetToEdit != null && widget.budgetToEdit!.categoryId == cat.id);
     }).toList();
 
+<<<<<<< Updated upstream
+=======
+    if (_selectedCategoryId == null && availableCategories.isNotEmpty && widget.budgetToEdit == null) {
+      try {
+        final outrosCat = availableCategories.firstWhere(
+          (cat) => cat.name.toLowerCase() == 'outros',
+        );
+        _selectedCategoryId = outrosCat.id;
+      } catch (_) {
+      }
+    }
+
+>>>>>>> Stashed changes
     return Card(
       elevation: 2,
       margin: const EdgeInsets.only(bottom: 24),
@@ -98,26 +122,27 @@ class _BudgetFormState extends State<BudgetForm> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Criar Novo Orçamento',
+                    widget.budgetToEdit != null ? 'Editar Orçamento' : 'Criar Novo Orçamento',
                     style: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  TextButton.icon(
-                    onPressed: () => _showNewCategoryDialog(context),
-                    icon: const Icon(Icons.add_circle_outline, size: 16),
-                    label: const Text('Nova Categoria', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  if (widget.budgetToEdit == null)
+                    TextButton.icon(
+                      onPressed: () => _showNewCategoryDialog(context),
+                      icon: const Icon(Icons.add_circle_outline, size: 16),
+                      label: const Text('Nova Categoria', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
                     ),
-                  ),
                 ],
               ),
               const SizedBox(height: 24),
               
-              if (availableCategories.isEmpty)
+              if (availableCategories.isEmpty && widget.budgetToEdit == null)
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -175,7 +200,7 @@ class _BudgetFormState extends State<BudgetForm> {
                               ),
                             );
                           }).toList(),
-                          onChanged: (val) {
+                          onChanged: widget.budgetToEdit != null ? null : (val) {
                             setState(() {
                               _selectedCategoryId = val;
                             });
@@ -289,14 +314,13 @@ class _BudgetFormState extends State<BudgetForm> {
               const SizedBox(height: 24),
               Row(
                 children: [
-                  if (availableCategories.isNotEmpty)
-                    Expanded(
-                      flex: 1,
-                      child: ElevatedButton(
-                        onPressed: _submitForm,
-                        child: const Text('Criar Orçamento'),
-                      ),
+                  Expanded(
+                    flex: 1,
+                    child: ElevatedButton(
+                      onPressed: _submitForm,
+                      child: Text(widget.budgetToEdit != null ? 'Salvar Alterações' : 'Criar Orçamento'),
                     ),
+                  ),
                   const SizedBox(width: 12),
                   OutlinedButton(
                     onPressed: widget.onCancel,
