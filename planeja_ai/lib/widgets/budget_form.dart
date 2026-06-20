@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/models/budget.dart';
 import '../providers/finance_provider.dart';
-import '../core/models/category.dart';
 import 'category_dialog.dart';
 
 class BudgetForm extends StatefulWidget {
@@ -91,8 +90,6 @@ class _BudgetFormState extends State<BudgetForm> {
              (widget.budgetToEdit != null && widget.budgetToEdit!.categoryId == cat.id);
     }).toList();
 
-<<<<<<< Updated upstream
-=======
     if (_selectedCategoryId == null && availableCategories.isNotEmpty && widget.budgetToEdit == null) {
       try {
         final outrosCat = availableCategories.firstWhere(
@@ -102,8 +99,6 @@ class _BudgetFormState extends State<BudgetForm> {
       } catch (_) {
       }
     }
-
->>>>>>> Stashed changes
     return Card(
       elevation: 2,
       margin: const EdgeInsets.only(bottom: 24),

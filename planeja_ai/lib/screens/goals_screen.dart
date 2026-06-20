@@ -69,7 +69,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           children: [
@@ -89,27 +89,8 @@ class _GoalsScreenState extends State<GoalsScreen> {
                     backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Theme.of(context).colorScheme.onPrimary,
                   ),
-<<<<<<< Updated upstream
                 ).animate().fade().scale(),
               ],
-=======
-                  const SizedBox(height: 24),
-                  if (_showForm)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 24),
-                      child: GoalForm(
-                        onAddGoal: _handleAddGoal,
-                        onCancel: _toggleForm,
-                        goalToEdit: _goalToEdit,
-                      ).animate().fade(duration: 300.ms).slideY(
-                          begin: -0.1,
-                          end: 0,
-                          duration: 300.ms,
-                          curve: Curves.easeOut),
-                    ),
-                ],
-              ),
->>>>>>> Stashed changes
             ),
             const SizedBox(height: 24),
 
@@ -117,14 +98,17 @@ class _GoalsScreenState extends State<GoalsScreen> {
               GoalForm(
                 onAddGoal: _handleAddGoal,
                 onCancel: _toggleForm,
+                goalToEdit: _goalToEdit,
               ).animate()
                .fade(duration: 300.ms)
                .slideY(begin: -0.1, end: 0, duration: 300.ms, curve: Curves.easeOut),
 
+
             Consumer<FinanceProvider>(
               builder: (context, financeProvider, child) {
                 if (financeProvider.isLoadingGoals) {
-                  return const Expanded(
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 40),
                     child: Center(
                       child: CircularProgressIndicator(),
                     ),
@@ -133,7 +117,8 @@ class _GoalsScreenState extends State<GoalsScreen> {
 
                 final goals = financeProvider.goals;
                 if (goals.isEmpty) {
-                  return Expanded(
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 80),
                     child: Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -155,38 +140,39 @@ class _GoalsScreenState extends State<GoalsScreen> {
                   );
                 }
 
-                return Expanded(
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      int crossAxisCount = constraints.maxWidth > 800 ? 3 : (constraints.maxWidth > 500 ? 2 : 1);
-                      
-                      return GridView.builder(
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: crossAxisCount,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                          mainAxisExtent: 375, 
-                        ),
-                        itemCount: goals.length,
-                        itemBuilder: (context, index) {
-                          return GoalCard(
-                            goal: goals[index],
-                            onDelete: () => _handleDeleteGoal(goals[index].id),
-                            onEdit: _handleEditGoal,
-                          )
-                          .animate()
-                          .fade(duration: 400.ms, delay: (50 * index).ms)
-                          .slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut);
-                        },
-                      );
-                    },
-                  ),
+                return LayoutBuilder(
+                  builder: (context, constraints) {
+                    int crossAxisCount = constraints.maxWidth > 800 ? 3 : (constraints.maxWidth > 500 ? 2 : 1);
+                    
+                    return GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossAxisCount,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                        mainAxisExtent: 375, 
+                      ),
+                      itemCount: goals.length,
+                      itemBuilder: (context, index) {
+                        return GoalCard(
+                          goal: goals[index],
+                          onDelete: () => _handleDeleteGoal(goals[index].id),
+                          onEdit: _handleEditGoal,
+                        )
+                        .animate()
+                        .fade(duration: 400.ms, delay: (50 * index).ms)
+                        .slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut);
+                      },
+                    );
+                  },
                 );
               },
             ),
           ],
         ),
       ),
+
     );
   }
 }

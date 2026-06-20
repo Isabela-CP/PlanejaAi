@@ -296,10 +296,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 ElevatedButton.icon(
                   onPressed: () => setState(() {
                     _showForm = !_showForm;
-<<<<<<< Updated upstream
-                    _titleController.clear();
-                    _categoryController.clear();
-=======
                     if (!_showForm) {
                       _transactionToEdit = null;
                       _titleController.clear();
@@ -308,7 +304,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       _categoryController.text = 'Outros';
                       _date = DateTime.now();
                     }
->>>>>>> Stashed changes
                     _showCategoryOptions = false;
                   }),
                   icon: const Icon(LucideIcons.plus, size: 16),
@@ -586,14 +581,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                               _showForm = false;
                               _transactionToEdit = null;
                               _titleController.clear();
-<<<<<<< Updated upstream
-                              _categoryController.clear();
-=======
                               _amountController.clear();
                               _descriptionController.clear();
                               _categoryController.text = 'Outros';
                               _date = DateTime.now();
->>>>>>> Stashed changes
                               _showCategoryOptions = false;
                             }),
                             style: OutlinedButton.styleFrom(
@@ -608,8 +599,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                   ),
                 ),
               ),
-            ).animate().fade(duration: 300.ms).slideY(begin: -0.1, end: 0, duration: 300.ms, curve: Curves.easeOut),
-              const SizedBox(height: 24),
+            ),
+
             ],
 
             // List
@@ -713,46 +704,16 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                             style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.bold),
                                           ),
                                         ),
-<<<<<<< Updated upstream
                                         const SizedBox(width: 8),
                                         Icon(LucideIcons.calendar, size: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
                                         const SizedBox(width: 4),
                                         Text(
                                           _formatDate.format(t.date),
                                           style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
-=======
-                                        const SizedBox(height: 4),
-                                        Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            SizedBox(
-                                              height: 28,
-                                              width: 28,
-                                              child: IconButton(
-                                                padding: EdgeInsets.zero,
-                                                iconSize: 16,
-                                                icon: const Icon(LucideIcons.edit3, color: Colors.grey),
-                                                hoverColor: theme.colorScheme.primary.withOpacity(0.1),
-                                                onPressed: () => _handleEditTransaction(t),
-                                              ),
-                                            ),
-                                            const SizedBox(width: 4),
-                                            SizedBox(
-                                              height: 28,
-                                              width: 28,
-                                              child: IconButton(
-                                                padding: EdgeInsets.zero,
-                                                iconSize: 16,
-                                                icon: const Icon(LucideIcons.trash2, color: Colors.grey),
-                                                hoverColor: Colors.red.withOpacity(0.1),
-                                                onPressed: () => _deleteTransaction(t.id),
-                                              ),
-                                            ),
-                                          ],
->>>>>>> Stashed changes
                                         ),
                                       ],
                                     ),
+
                                   ],
                                 ),
                               ),
@@ -766,6 +727,12 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                       fontWeight: FontWeight.bold,
                                       color: baseColor,
                                     ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  IconButton(
+                                    icon: const Icon(LucideIcons.edit3, size: 16, color: Colors.grey),
+                                    hoverColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                    onPressed: () => _handleEditTransaction(t),
                                   ),
                                   const SizedBox(width: 8),
                                   IconButton(

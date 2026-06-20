@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../core/models/category.dart';
 import '../core/models/transaction.dart';
@@ -28,10 +29,7 @@ class FinanceProvider extends ChangeNotifier {
   double _income = 0.0;
   double _expenses = 0.0;
 
-<<<<<<< Updated upstream
-=======
   List<dynamic>? get reportEvolucaoSaldo => _reportBalanceEvolution;
->>>>>>> Stashed changes
   List<AppCategory> get transactionCategories => List.unmodifiable(_transactionCategories);
   List<AppCategory> get goalCategories => List.unmodifiable(_goalCategories);
   List<AppCategory> get categories => transactionCategories;
@@ -176,14 +174,9 @@ class FinanceProvider extends ChangeNotifier {
         exp += tx.amount;
       }
     }
-<<<<<<< Updated upstream
-=======
-    
     for (var goal in _goals) {
       exp += goal.currentAmount;
     }
-
->>>>>>> Stashed changes
     _income = inc;
     _expenses = exp;
     _balance = inc - exp;
@@ -214,7 +207,7 @@ class FinanceProvider extends ChangeNotifier {
       body: tx.toJson(),
     );
     if (response.statusCode == 200) {
-      final updatedTx = Transaction.fromJson(_apiService.decode(response) as Map<String, dynamic>);
+      final updatedTx = Transaction.fromJson(json.decode(response.body) as Map<String, dynamic>);
       final idx = _transactions.indexWhere((t) => t.id == id);
       if (idx != -1) {
         _transactions[idx] = updatedTx;
@@ -224,7 +217,7 @@ class FinanceProvider extends ChangeNotifier {
         fetchReportsData();
       }
     } else {
-      final data = _apiService.decode(response);
+      final data = json.decode(response.body);
       final msg = data is Map ? (data['error'] ?? 'Erro ao atualizar transação') : 'Erro ao atualizar transação';
       throw Exception(msg);
     }
