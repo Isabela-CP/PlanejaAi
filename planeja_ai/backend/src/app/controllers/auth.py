@@ -82,7 +82,8 @@ def me():
         "notifications_email": user.notifications_email,
         "notifications_sms": user.notifications_sms,
         "share_anonymous_data": user.share_anonymous_data,
-        "avatar_url": user.avatar_url
+        "avatar_url": user.avatar_url,
+        "created_at": user.created_at.isoformat() if user.created_at else None
     }), 200
 
 @auth_bp.route('/me', methods=['PUT'])

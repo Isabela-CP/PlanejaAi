@@ -73,6 +73,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   @override
   void initState() {
     super.initState();
+    _categoryController.text = 'Outros';
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<FinanceProvider>();
       provider.fetchCategories();
@@ -227,7 +228,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         _titleController.clear();
         _amountController.clear();
         _descriptionController.clear();
-        _categoryController.clear();
+        _categoryController.text = 'Outros';
         _showCategoryOptions = false;
       });
       if (mounted) {
@@ -273,7 +274,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                   onPressed: () => setState(() {
                     _showForm = !_showForm;
                     _titleController.clear();
-                    _categoryController.clear();
+                    _categoryController.text = 'Outros';
                     _showCategoryOptions = false;
                   }),
                   icon: const Icon(LucideIcons.plus, size: 16),
@@ -550,7 +551,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                             onPressed: () => setState(() {
                               _showForm = false;
                               _titleController.clear();
-                              _categoryController.clear();
+                              _categoryController.text = 'Outros';
                               _showCategoryOptions = false;
                             }),
                             style: OutlinedButton.styleFrom(

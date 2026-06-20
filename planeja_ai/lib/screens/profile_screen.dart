@@ -193,10 +193,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildAccountInfoCard(BuildContext context) {
     final theme = Theme.of(context);
+    final authProvider = context.watch<AuthProvider>();
+    final financeProvider = context.watch<FinanceProvider>();
+
+    final user = authProvider.userData;
+    String memberSince = 'Janeiro 2024';
+    if (user != null && user['created_at'] != null) {
+      try {
+        final dt = DateTime.parse(user['created_at']);
+        final months = [
+          'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+          'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+        ];
+        memberSince = '${months[dt.month - 1]} ${dt.year}';
+      } catch (e) {
+        debugPrint('Error parsing created_at: $e');
+      }
+    }
+
+    final totalTransactions = financeProvider.transactions.length.toString();
+    final activeGoals = financeProvider.goals.length.toString();
+
     final items = [
-      {'label': 'Membro desde', 'value': 'Janeiro 2024'},
-      {'label': 'Total de Transações', 'value': '47'},
-      {'label': 'Metas Ativas', 'value': '3'},
+      {'label': 'Membro desde', 'value': memberSince},
+      {'label': 'Total de Transações', 'value': totalTransactions},
+      {'label': 'Metas Ativas', 'value': activeGoals},
     ];
 
     return Card(
@@ -212,16 +233,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
             LayoutBuilder(builder: (context, constraints) {
               final cols = constraints.maxWidth > 500 ? 3 : 1;
               if (cols == 3) {
-                return Row(
-                  children: items.map((item) => Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.only(right: item != items.last ? 12 : 0),
-                      child: _buildAccountInfoItem(context, item['label']!, item['value']!),
-                    ),
-                  )).toList(),
+                return IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: items.map((item) => Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(right: item != items.last ? 12 : 0),
+                        child: _buildAccountInfoItem(context, item['label']!, item['value']!),
+                      ),
+                    )).toList(),
+                  ),
                 );
               }
               return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: items.map((item) => Padding(
                   padding: EdgeInsets.only(bottom: item != items.last ? 12 : 0),
                   child: _buildAccountInfoItem(context, item['label']!, item['value']!),
@@ -244,6 +269,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label,
               style: TextStyle(
@@ -251,7 +277,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 fontWeight: FontWeight.w500,
                 color: theme.colorScheme.onSurface.withOpacity(0.6),
               )),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         ],
       ),

@@ -16,3 +16,4 @@ class User(db.Model):
     share_anonymous_data = db.Column(db.Boolean, default=False)
     theme_dark = db.Column(db.Boolean, default=False)
     avatar_url = db.Column(db.String(255), nullable=True)
+    created_at = db.Column(db.DateTime(timezone=True), default=db.func.now())
