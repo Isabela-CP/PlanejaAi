@@ -45,7 +45,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           final totalExpenses =
               (summaryData['despesa'] as num?)?.toDouble() ?? 0.0;
           final balance = (summaryData['liquido'] as num?)?.toDouble() ?? 0.0;
-          final savings = 0.0;
+          final savings = (summaryData['economia'] as num?)?.toDouble() ?? 0.0;
 
           final categoryBreakdown = provider.reportCategoryBreakdown ?? [];
           final evolucaoList = provider.reportBalanceEvolution ?? [];

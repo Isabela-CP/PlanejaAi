@@ -28,7 +28,8 @@ class FinanceProvider extends ChangeNotifier {
   double _balance = 0.0;
   double _income = 0.0;
   double _expenses = 0.0;
-
+  // Adicione isso dentro da classe FinanceProvider
+  List<dynamic>? get reportEvolucaoSaldo => _reportBalanceEvolution;
   List<AppCategory> get transactionCategories => List.unmodifiable(_transactionCategories);
   List<AppCategory> get goalCategories => List.unmodifiable(_goalCategories);
   List<AppCategory> get categories => transactionCategories;
@@ -49,9 +50,26 @@ class FinanceProvider extends ChangeNotifier {
   double get income => _income;
   double get expenses => _expenses;
 
-  Future<void> fetchCategories({String type = 'transaction'}) async {
-    _isLoadingCategories = true;
+  void clear() {
+    _transactionCategories.clear();
+    _goalCategories.clear();
+    _transactions.clear();
+    _budgets.clear();
+    _goals.clear();
+    _reportSummary = null;
+    _reportCategoryBreakdown = null;
+    _reportBalanceEvolution = null;
+    _balance = 0.0;
+    _income = 0.0;
+    _expenses = 0.0;
     notifyListeners();
+  }
+
+  Future<void> fetchCategories({String type = 'transaction'}) async {
+    if (type == 'goal' ? _goalCategories.isEmpty : _transactionCategories.isEmpty) {
+      _isLoadingCategories = true;
+      notifyListeners();
+    }
     try {
       final response = await _apiService.get('/categories?type=$type');
       if (response.statusCode == 200) {
@@ -143,8 +161,10 @@ class FinanceProvider extends ChangeNotifier {
   }
 
   Future<void> fetchTransactions() async {
-    _isLoadingTransactions = true;
-    notifyListeners();
+    if (_transactions.isEmpty) {
+      _isLoadingTransactions = true;
+      notifyListeners();
+    }
     try {
       final response = await _apiService.get('/transactions');
       if (response.statusCode == 200) {
@@ -173,6 +193,12 @@ class FinanceProvider extends ChangeNotifier {
         exp += tx.amount;
       }
     }
+    
+    // Adicionar o valor já guardado nas metas como um 'gasto/investimento' retirado do saldo
+    for (var goal in _goals) {
+      exp += goal.currentAmount;
+    }
+
     _income = inc;
     _expenses = exp;
     _balance = inc - exp;
@@ -213,8 +239,10 @@ class FinanceProvider extends ChangeNotifier {
   }
 
   Future<void> fetchBudgets({DateTime? date}) async {
-    _isLoadingBudgets = true;
-    notifyListeners();
+    if (_budgets.isEmpty) {
+      _isLoadingBudgets = true;
+      notifyListeners();
+    }
     try {
       final queryDate = date ?? DateTime.now();
       final dateStr = "${queryDate.year.toString().padLeft(4, '0')}-${queryDate.month.toString().padLeft(2, '0')}-01";
@@ -301,8 +329,10 @@ class FinanceProvider extends ChangeNotifier {
   }
 
   Future<void> fetchGoals() async {
-    _isLoadingGoals = true;
-    notifyListeners();
+    if (_goals.isEmpty) {
+      _isLoadingGoals = true;
+      notifyListeners();
+    }
     try {
       final response = await _apiService.get('/goals');
       if (response.statusCode == 200) {
@@ -310,6 +340,7 @@ class FinanceProvider extends ChangeNotifier {
         _goals = data
             .map((e) => Goal.fromJson(e as Map<String, dynamic>))
             .toList();
+        _recalculateBalances();
       }
     } catch (e) {
       debugPrint('fetchGoals error: $e');
@@ -327,6 +358,7 @@ class FinanceProvider extends ChangeNotifier {
     if (response.statusCode == 201) {
       final newGoal = Goal.fromJson(json.decode(response.body) as Map<String, dynamic>);
       _goals.add(newGoal);
+      _recalculateBalances();
       notifyListeners();
     } else {
       final msg = (json.decode(response.body) as Map<String, dynamic>)['error'] ??
@@ -359,6 +391,7 @@ class FinanceProvider extends ChangeNotifier {
       final idx = _goals.indexWhere((g) => g.id == id);
       if (idx != -1) {
         _goals[idx] = updatedGoal;
+        _recalculateBalances();
         notifyListeners();
       }
     } else {
@@ -372,6 +405,7 @@ class FinanceProvider extends ChangeNotifier {
     final response = await _apiService.delete('/goals/$id');
     if (response.statusCode == 200) {
       _goals.removeWhere((g) => g.id == id);
+      _recalculateBalances();
       notifyListeners();
     } else {
       final msg = (json.decode(response.body) as Map<String, dynamic>)['error'] ??
@@ -381,8 +415,10 @@ class FinanceProvider extends ChangeNotifier {
   }
 
   Future<void> fetchReportsData({DateTime? startDate, DateTime? endDate}) async {
-    _isLoadingReports = true;
-    notifyListeners();
+    if (_reportSummary == null) {
+      _isLoadingReports = true;
+      notifyListeners();
+    }
 
     try {
       String query = '';

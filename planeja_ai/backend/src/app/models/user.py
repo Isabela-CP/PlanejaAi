@@ -15,3 +15,4 @@ class User(db.Model):
     notifications_sms = db.Column(db.Boolean, default=False)
     share_anonymous_data = db.Column(db.Boolean, default=False)
     theme_dark = db.Column(db.Boolean, default=False)
+    avatar_url = db.Column(db.String(255), nullable=True)
