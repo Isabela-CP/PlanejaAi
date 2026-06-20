@@ -35,7 +35,7 @@ class AuthProvider extends ChangeNotifier {
       final response = await _apiService.get('/auth/me');
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        final data = _apiService.decode(response);
         _isAuthenticated = true;
         _username = data['name'];
         _userData = data;
@@ -60,7 +60,7 @@ class AuthProvider extends ChangeNotifier {
         body: {'email': email, 'password': password},
       );
 
-      final data = json.decode(response.body);
+      final data = _apiService.decode(response);
 
       if (response.statusCode == 200) {
         final prefs = await SharedPreferences.getInstance();
@@ -71,7 +71,7 @@ class AuthProvider extends ChangeNotifier {
         // Fetch complete user data
         await fetchMe();
       } else {
-        throw Exception(data['error'] ?? 'Falha na autenticação');
+        throw Exception(data is Map ? (data['error'] ?? 'Falha na autenticação') : 'Falha na autenticação');
       }
     } on SocketException {
       throw Exception('Sem conexão com o servidor. Verifique sua internet.');
@@ -88,13 +88,13 @@ class AuthProvider extends ChangeNotifier {
         body: {'email': email, 'password': password, 'name': name},
       );
 
-      final data = json.decode(response.body);
+      final data = _apiService.decode(response);
 
       if (response.statusCode == 201) {
         // Automatically login after successful registration
         await login(email, password);
       } else {
-        throw Exception(data['error'] ?? 'Falha ao criar conta');
+        throw Exception(data is Map ? (data['error'] ?? 'Falha ao criar conta') : 'Falha ao criar conta');
       }
     } on SocketException {
       throw Exception('Sem conexão com o servidor. Verifique sua internet.');
@@ -120,7 +120,7 @@ class AuthProvider extends ChangeNotifier {
   Future<void> fetchMe() async {
     final response = await _apiService.get('/auth/me');
     if (response.statusCode == 200) {
-      _userData = json.decode(response.body);
+      _userData = _apiService.decode(response);
       _username = _userData?['name'];
       notifyListeners();
     }
@@ -136,8 +136,8 @@ class AuthProvider extends ChangeNotifier {
       if (response.statusCode == 200) {
         await fetchMe();
       } else {
-        final err = json.decode(response.body);
-        throw Exception(err['error'] ?? 'Falha ao atualizar perfil');
+        final err = _apiService.decode(response);
+        throw Exception(err is Map ? (err['error'] ?? 'Falha ao atualizar perfil') : 'Falha ao atualizar perfil');
       }
     } finally {
       _setLoading(false);
@@ -156,8 +156,8 @@ class AuthProvider extends ChangeNotifier {
       if (response.statusCode == 200) {
         await fetchMe();
       } else {
-        final err = json.decode(response.body);
-        throw Exception(err['error'] ?? 'Falha ao fazer upload da imagem');
+        final err = _apiService.decode(response);
+        throw Exception(err is Map ? (err['error'] ?? 'Falha ao fazer upload da imagem') : 'Falha ao fazer upload da imagem');
       }
     } finally {
       _setLoading(false);

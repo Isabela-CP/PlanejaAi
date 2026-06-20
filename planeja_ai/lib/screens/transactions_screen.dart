@@ -255,16 +255,20 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header
-            Wrap(
-              alignment: WrapAlignment.spaceBetween,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: 16,
-              runSpacing: 16,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const Text(
-                  'Transações',
-                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-                ).animate().fade().slideX(),
+                Expanded(
+                  child: Text(
+                    'Transações',
+                    style: TextStyle(
+                      fontSize: MediaQuery.of(context).size.width < 600 ? 24 : 32,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ).animate().fade().slideX(),
+                ),
+                const SizedBox(width: 12),
                 ElevatedButton.icon(
                   onPressed: () => setState(() {
                     _showForm = !_showForm;

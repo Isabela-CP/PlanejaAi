@@ -73,4 +73,12 @@ class ApiService {
     var streamedResponse = await request.send();
     return await http.Response.fromStream(streamedResponse);
   }
+
+  dynamic decode(http.Response response) {
+    try {
+      return json.decode(response.body);
+    } on FormatException {
+      throw Exception('Resposta inválida do servidor.');
+    }
+  }
 }

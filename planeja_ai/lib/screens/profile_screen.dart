@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../providers/theme_provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/finance_provider.dart';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 
@@ -267,11 +268,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
-            Row(
+            Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 12,
+              runSpacing: 8,
               children: [
                 Icon(LucideIcons.user, size: 28, color: theme.colorScheme.primary),
-                const SizedBox(width: 12),
                 const Text(
                   'Configurações do Perfil',
                   style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
@@ -307,6 +309,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 .animate()
                 .fade(duration: 400.ms, delay: 300.ms)
                 .slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut),
+
+            const SizedBox(height: 24),
+
+            // Logout button for mobile screens
+            if (MediaQuery.of(context).size.width < 768)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    context.read<FinanceProvider>().clear();
+                    context.read<AuthProvider>().logout();
+                  },
+                  icon: const Icon(LucideIcons.logOut),
+                  label: const Text('Sair da Conta'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.errorContainer,
+                    foregroundColor: theme.colorScheme.onErrorContainer,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                ),
+              ).animate()
+               .fade(duration: 400.ms, delay: 400.ms)
+               .slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut),
 
             const SizedBox(height: 24),
           ],
