@@ -2,19 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-<<<<<<< Updated upstream
-=======
-  // Cores mais tranquilas da branch feature/relatorios-perfil-e-tema
-  static const Color _primaryLight = Color(0xFFD4A017); // Amarelo/Ouro suave
-  static const Color _primaryDark = Color(0xFFF2C230); // Amarelo original
-  
-  static const Color _bgLight = Color(0xFFF5F0E6); // Bege/Cinza quente suave
-  static const Color _surfaceLight = Color(0xFFFFFDF9); // Off-white aconchegante
-  
-  static const Color _bgDark = Color(0xFF202124); // Cinza escuro Google
-  static const Color _surfaceDark = Color(0xFF292A2D); // Cinza cards/menu
+  static const Color _primaryLight = Color(0xFFD4A017);
+  static const Color _primaryDark = Color(0xFFF2C230);
 
->>>>>>> Stashed changes
+  static const Color _bgLight = Color(0xFFF5F0E6);
+  static const Color _surfaceLight = Color(0xFFFFFDF9);
+
+  static const Color _bgDark = Color(0xFF202124);
+  static const Color _surfaceDark = Color(0xFF292A2D);
+
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
@@ -57,7 +53,8 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
@@ -116,7 +113,8 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: const Color(0xFF1E293B),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: Color(0xFF334155)),
