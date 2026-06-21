@@ -114,11 +114,18 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
             // Header estilo Painel/Transações
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const Text(
-                  'Orçamentos',
-                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-                ).animate().fade(duration: 300.ms).slideX(begin: -0.1, end: 0, duration: 300.ms, curve: Curves.easeOut),
+                Expanded(
+                  child: Text(
+                    'Orçamentos',
+                    style: TextStyle(
+                      fontSize: MediaQuery.of(context).size.width < 600 ? 24 : 32,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ).animate().fade(duration: 300.ms).slideX(begin: -0.1, end: 0, duration: 300.ms, curve: Curves.easeOut),
+                ),
+                const SizedBox(width: 12),
                 ElevatedButton.icon(
                   onPressed: _toggleForm,
                   icon: Icon(_showForm ? Icons.close : Icons.add, size: 16),

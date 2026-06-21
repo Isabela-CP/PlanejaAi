@@ -8,6 +8,8 @@ import 'core/theme.dart';
 import 'core/router.dart';
 import 'providers/auth_provider.dart';
 import 'providers/finance_provider.dart';
+import 'providers/theme_provider.dart';
+import 'package:go_router/go_router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,7 +21,7 @@ void main() async {
     debugPrint("Aviso: Falha ao carregar arquivo .env");
   }
 
-  if (!kIsWeb) {
+  if (!kIsWeb && (defaultTargetPlatform == TargetPlatform.windows || defaultTargetPlatform == TargetPlatform.linux || defaultTargetPlatform == TargetPlatform.macOS)) {
     await windowManager.ensureInitialized();
 
     WindowOptions windowOptions = const WindowOptions(
@@ -39,26 +41,40 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => FinanceProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
       child: const MyApp(),
     ),
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
   @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  late final GoRouter _router;
+
+  @override
+  void initState() {
+    super.initState();
+    final authProvider = context.read<AuthProvider>();
+    _router = createRouter(authProvider);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Consumer<AuthProvider>(
-      builder: (context, authProvider, _) {
-        final router = createRouter(authProvider);
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, _) {
         return MaterialApp.router(
-          title: 'My Money',
+          title: 'Planeja.AI',
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
-          themeMode: ThemeMode.system,
-          routerConfig: router,
+          themeMode: themeProvider.themeMode,
+          routerConfig: _router,
           debugShowCheckedModeBanner: false,
         );
       },
