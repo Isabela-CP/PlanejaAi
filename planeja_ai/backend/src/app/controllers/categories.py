@@ -25,27 +25,6 @@ def list_categories():
         return jsonify({'error': 'Parâmetro type inválido. Deve ser transaction ou goal.'}), 400
 
     cats = Category.query.filter_by(user_id=request.user_id, type=cat_type).order_by(Category.name).all()
-
-    outros_exists = any(c.name.lower() == 'outros' for c in cats)
-    if not outros_exists:
-
-        default_color = "#9E9E9E"
-        default_icon = "help-circle"
-        
-        outros = Category(
-            user_id=request.user_id,
-            name="Outros",
-            color_hex=default_color,
-            icon_name=default_icon,
-            type=cat_type
-        )
-        db.session.add(outros)
-        db.session.commit()
-        
-        # Re-fetch or just append to list
-        cats.append(outros)
-        cats.sort(key=lambda x: x.name)
-
     return jsonify([c.to_dict() for c in cats]), 200
 
 

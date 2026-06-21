@@ -3,42 +3,50 @@ import 'package:flutter/material.dart';
 class Logo extends StatelessWidget {
   final double size;
   final bool showText;
-  final MainAxisAlignment mainAxisAlignment;
 
-  const Logo({
-    super.key, 
-    this.size = 48.0, 
-    this.showText = true,
-    this.mainAxisAlignment = MainAxisAlignment.center,
-  });
+  const Logo({super.key, this.size = 32.0, this.showText = true});
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: mainAxisAlignment,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Image.asset(
-          'assets/images/logo.png',
+        Container(
           width: size,
           height: size,
-          fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) {
-             // Retorno fallback para quando a imagem não for encontrada
-             return Icon(Icons.image_not_supported, size: size, color: Colors.grey);
-          },
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(size / 4),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF3B82F6).withOpacity(0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Icon(
+            Icons.account_balance_wallet,
+            color: Colors.white,
+            size: size * 0.6,
+          ),
         ),
         if (showText) ...[
           const SizedBox(width: 12),
-          Flexible(
-            child: Text(
-              'Planeja.AI',
-              style: TextStyle(
-                fontSize: size * 0.4,
-                fontWeight: FontWeight.w800,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-              overflow: TextOverflow.ellipsis,
+          Text(
+            'Planeja.AI',
+            style: TextStyle(
+              fontSize: size * 0.7,
+              fontWeight: FontWeight.w800,
+              foreground: Paint()
+                ..shader = const LinearGradient(
+                  colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
+                ).createShader(const Rect.fromLTWH(0.0, 0.0, 200.0, 70.0)),
             ),
           ),
         ]

@@ -1,14 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:provider/provider.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import '../providers/theme_provider.dart';
-import '../providers/auth_provider.dart';
-import '../providers/finance_provider.dart';
-import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -18,36 +10,24 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-
   // Formulário
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _ageController = TextEditingController();
-  String _email = '';
-  String? _avatarUrl;
+  final _nameController = TextEditingController(text: 'Usuário');
+  final _ageController = TextEditingController(text: '25');
+  static const String _email = 'usuario@email.com';
   bool _isLoading = false;
-  final ImagePicker _picker = ImagePicker();
-  bool _isInit = false;
 
   // Preferências
   bool _notificationsEnabled = true;
   bool _shareDataEnabled = false;
 
+  // Tema 
+  bool _isDarkMode = false;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_isInit) {
-      final authData = context.read<AuthProvider>().userData;
-      if (authData != null) {
-        _nameController.text = authData['name'] ?? '';
-        _email = authData['email'] ?? '';
-        _ageController.text = authData['age']?.toString() ?? '';
-        _notificationsEnabled = authData['notifications_push'] ?? true;
-        _shareDataEnabled = authData['share_anonymous_data'] ?? false;
-        _avatarUrl = authData['avatar_url'];
-      }
-      _isInit = true;
-    }
+    _isDarkMode = Theme.of(context).brightness == Brightness.dark;
   }
 
   @override
@@ -61,85 +41,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
-    try {
-      await context.read<AuthProvider>().updateProfile({
-        'name': _nameController.text,
-        'age': _ageController.text,
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Perfil atualizado com sucesso!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch(e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    await Future.delayed(const Duration(milliseconds: 800));
+    if (mounted) {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Perfil atualizado com sucesso!'),
+          backgroundColor: Colors.green,
+        ),
+      );
     }
   }
 
   void _savePreferences() async {
     setState(() => _isLoading = true);
-    try {
-      final themeProvider = context.read<ThemeProvider>();
-      final isDark = themeProvider.themeMode == ThemeMode.dark;
-      
-      await context.read<AuthProvider>().updateProfile({
-        'notifications_push': _notificationsEnabled,
-        'share_anonymous_data': _shareDataEnabled,
-        'theme_dark': isDark,
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Preferências salvas!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch(e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  void _pickAndUploadImage() async {
-    try {
-      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-      if (image == null) return;
-      
-      setState(() => _isLoading = true);
-      final bytes = await image.readAsBytes();
-      await context.read<AuthProvider>().uploadAvatar(bytes, image.name);
-      
-      if (mounted) {
-        setState(() {
-           _avatarUrl = context.read<AuthProvider>().userData?['avatar_url'];
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Foto atualizada!'), backgroundColor: Colors.green),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao atualizar foto: $e'), backgroundColor: Colors.red),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    await Future.delayed(const Duration(milliseconds: 600));
+    if (mounted) {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Preferências salvas!'),
+          backgroundColor: Colors.green,
+        ),
+      );
     }
   }
 
@@ -193,31 +117,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildAccountInfoCard(BuildContext context) {
     final theme = Theme.of(context);
-    final authProvider = context.watch<AuthProvider>();
-    final financeProvider = context.watch<FinanceProvider>();
-
-    final user = authProvider.userData;
-    String memberSince = 'Janeiro 2024';
-    if (user != null && user['created_at'] != null) {
-      try {
-        final dt = DateTime.parse(user['created_at']);
-        final months = [
-          'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-          'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-        ];
-        memberSince = '${months[dt.month - 1]} ${dt.year}';
-      } catch (e) {
-        debugPrint('Error parsing created_at: $e');
-      }
-    }
-
-    final totalTransactions = financeProvider.transactions.length.toString();
-    final activeGoals = financeProvider.goals.length.toString();
-
     final items = [
-      {'label': 'Membro desde', 'value': memberSince},
-      {'label': 'Total de Transações', 'value': totalTransactions},
-      {'label': 'Metas Ativas', 'value': activeGoals},
+      {'label': 'Membro desde', 'value': 'Janeiro 2024'},
+      {'label': 'Total de Transações', 'value': '47'},
+      {'label': 'Metas Ativas', 'value': '3'},
     ];
 
     return Card(
@@ -233,20 +136,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
             LayoutBuilder(builder: (context, constraints) {
               final cols = constraints.maxWidth > 500 ? 3 : 1;
               if (cols == 3) {
-                return IntrinsicHeight(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: items.map((item) => Expanded(
-                      child: Padding(
-                        padding: EdgeInsets.only(right: item != items.last ? 12 : 0),
-                        child: _buildAccountInfoItem(context, item['label']!, item['value']!),
-                      ),
-                    )).toList(),
-                  ),
+                return Row(
+                  children: items.map((item) => Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(right: item != items.last ? 12 : 0),
+                      child: _buildAccountInfoItem(context, item['label']!, item['value']!),
+                    ),
+                  )).toList(),
                 );
               }
               return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: items.map((item) => Padding(
                   padding: EdgeInsets.only(bottom: item != items.last ? 12 : 0),
                   child: _buildAccountInfoItem(context, item['label']!, item['value']!),
@@ -269,7 +168,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label,
               style: TextStyle(
@@ -277,7 +175,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 fontWeight: FontWeight.w500,
                 color: theme.colorScheme.onSurface.withOpacity(0.6),
               )),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         ],
       ),
@@ -294,12 +192,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Wrap(
-              crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: 12,
-              runSpacing: 8,
+            // Header
+            Row(
               children: [
                 Icon(LucideIcons.user, size: 28, color: theme.colorScheme.primary),
+                const SizedBox(width: 12),
                 const Text(
                   'Configurações do Perfil',
                   style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
@@ -337,29 +234,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 .slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut),
 
             const SizedBox(height: 24),
-
-            // Logout button for mobile screens
-            if (MediaQuery.of(context).size.width < 768)
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    context.read<FinanceProvider>().clear();
-                    context.read<AuthProvider>().logout();
-                  },
-                  icon: const Icon(LucideIcons.logOut),
-                  label: const Text('Sair da Conta'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.colorScheme.errorContainer,
-                    foregroundColor: theme.colorScheme.onErrorContainer,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                ),
-              ).animate()
-               .fade(duration: 400.ms, delay: 400.ms)
-               .slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut),
-
-            const SizedBox(height: 24),
           ],
         ),
       ),
@@ -383,38 +257,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               // Avatar
               Center(
-                child: InkWell(
-                  onTap: _pickAndUploadImage,
-                  borderRadius: BorderRadius.circular(40),
-                  child: Stack(
-                    children: [
-                      CircleAvatar(
-                        radius: 40,
-                        backgroundColor: theme.colorScheme.primary.withOpacity(0.15),
-                        backgroundImage: _avatarUrl != null 
-                            ? NetworkImage('${() {
-                                String url = dotenv.env['API_BASE_URL']?.replaceAll('/api', '') ?? 'http://localhost:8000';
-                                if (!kIsWeb && Platform.isAndroid) {
-                                  url = url.replaceAll('localhost', '10.0.2.2').replaceAll('127.0.0.1', '10.0.2.2');
-                                }
-                                return url;
-                              }()}$_avatarUrl') 
-                            : null,
-                        child: _avatarUrl == null 
-                            ? Icon(LucideIcons.user, size: 40, color: theme.colorScheme.primary) 
-                            : null,
+                child: Stack(
+                  children: [
+                    CircleAvatar(
+                      radius: 40,
+                      backgroundColor: theme.colorScheme.primary.withOpacity(0.15),
+                      child: Icon(LucideIcons.user, size: 40, color: theme.colorScheme.primary),
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: CircleAvatar(
+                        radius: 14,
+                        backgroundColor: theme.colorScheme.primary,
+                        child: Icon(LucideIcons.camera, size: 14, color: theme.colorScheme.onPrimary),
                       ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: CircleAvatar(
-                          radius: 14,
-                          backgroundColor: theme.colorScheme.primary,
-                          child: Icon(LucideIcons.camera, size: 14, color: theme.colorScheme.onPrimary),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 20),
@@ -501,11 +360,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildPreferencesCard(BuildContext context) {
     final theme = Theme.of(context);
-    final themeProvider = context.watch<ThemeProvider>();
-    final isDarkMode = themeProvider.themeMode == ThemeMode.dark ||
-        (themeProvider.themeMode == ThemeMode.system &&
-            theme.brightness == Brightness.dark);
-
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -521,7 +375,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Row(
               children: [
                 Icon(
-                  isDarkMode ? LucideIcons.moon : LucideIcons.sun,
+                  _isDarkMode ? LucideIcons.moon : LucideIcons.sun,
                   size: 16, color: theme.colorScheme.onSurface.withOpacity(0.7),
                 ),
                 const SizedBox(width: 6),
@@ -553,17 +407,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(width: 8),
                   OutlinedButton.icon(
                     onPressed: () {
-                      final newMode = !isDarkMode;
-                      context.read<ThemeProvider>().toggleTheme(newMode);
+                      setState(() => _isDarkMode = !_isDarkMode);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(newMode ? 'Modo escuro ativado' : 'Modo claro ativado'),
+                          content: Text(_isDarkMode ? 'Modo escuro ativado' : 'Modo claro ativado'),
                           duration: const Duration(seconds: 1),
                         ),
                       );
                     },
-                    icon: Icon(isDarkMode ? LucideIcons.sun : LucideIcons.moon, size: 15),
-                    label: Text(isDarkMode ? 'Claro' : 'Escuro'),
+                    icon: Icon(_isDarkMode ? LucideIcons.sun : LucideIcons.moon, size: 15),
+                    label: Text(_isDarkMode ? 'Claro' : 'Escuro'),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),

@@ -16,7 +16,6 @@ CREATE TABLE IF NOT EXISTS users (
     notifications_sms BOOLEAN DEFAULT FALSE,
     share_anonymous_data BOOLEAN DEFAULT FALSE,
     theme_dark BOOLEAN DEFAULT TRUE,
-    avatar_url VARCHAR(255),
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 

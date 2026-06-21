@@ -74,26 +74,18 @@ def resumo():
                 Transaction.date >= start_date,
                 Transaction.date <= end_date).scalar()
                 
-    # Total guardado em metas
-    from src.app.models.goal import Goal
-    total_metas = db.session.query(func.coalesce(func.sum(Goal.current_value), 0))\
-        .filter(Goal.user_id == request.user_id).scalar()
-                
     receita_val = float(receita)
     despesa_val = float(despesa)
-    economia_val = float(total_metas)
-    liquido_val = receita_val - despesa_val - economia_val
+    liquido_val = receita_val - despesa_val
     
     return jsonify({
         'receita': receita_val,
         'despesa': despesa_val,
-        'economia': economia_val,
         'liquido': liquido_val,
         'quantidade_transacoes': quantidade_transacoes,
         # Compatibilidade com camelCase/inglês
         'totalIncome': receita_val,
         'totalExpenses': despesa_val,
-        'totalSavings': economia_val,
         'netIncome': liquido_val,
         'transactionCount': quantidade_transacoes
     }), 200

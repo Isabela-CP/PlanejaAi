@@ -73,7 +73,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   @override
   void initState() {
     super.initState();
-    _categoryController.text = 'Outros';
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<FinanceProvider>();
       provider.fetchCategories();
@@ -228,7 +227,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         _titleController.clear();
         _amountController.clear();
         _descriptionController.clear();
-        _categoryController.text = 'Outros';
+        _categoryController.clear();
         _showCategoryOptions = false;
       });
       if (mounted) {
@@ -258,23 +257,16 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             // Header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Expanded(
-                  child: Text(
-                    'Transações',
-                    style: TextStyle(
-                      fontSize: MediaQuery.of(context).size.width < 600 ? 24 : 32,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ).animate().fade().slideX(),
-                ),
-                const SizedBox(width: 12),
+                const Text(
+                  'Transações',
+                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                ).animate().fade().slideX(),
                 ElevatedButton.icon(
                   onPressed: () => setState(() {
                     _showForm = !_showForm;
                     _titleController.clear();
-                    _categoryController.text = 'Outros';
+                    _categoryController.clear();
                     _showCategoryOptions = false;
                   }),
                   icon: const Icon(LucideIcons.plus, size: 16),
@@ -551,7 +543,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                             onPressed: () => setState(() {
                               _showForm = false;
                               _titleController.clear();
-                              _categoryController.text = 'Outros';
+                              _categoryController.clear();
                               _showCategoryOptions = false;
                             }),
                             style: OutlinedButton.styleFrom(
@@ -622,105 +614,84 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                 ? (_kIcons[t.category!.iconName] ?? LucideIcons.helpCircle)
                                 : (isIncome ? LucideIcons.arrowUpRight : LucideIcons.arrowDownLeft);
 
-                            return InkWell(
-                              onTap: () {},
+                            return ListTile(
+                              contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                               hoverColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                                child: Row(
+                              leading: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: color.withOpacity(0.15),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  icon,
+                                  color: color,
+                                  size: 20,
+                                ),
+                              ),
+                              title: Text(
+                                t.title,
+                                style: const TextStyle(fontWeight: FontWeight.w600),
+                              ),
+                              subtitle: Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(10),
-                                      decoration: BoxDecoration(
-                                        color: color.withOpacity(0.15),
-                                        shape: BoxShape.circle,
+                                    if (t.description.isNotEmpty) ...[
+                                      Text(
+                                        t.description,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.85),
+                                        ),
                                       ),
-                                      child: Icon(icon, color: color, size: 20),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            t.title,
-                                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
-                                          ),
-                                          if (t.description.isNotEmpty) ...[
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              t.description,
-                                              style: TextStyle(
-                                                fontSize: 13,
-                                                color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.85),
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ],
-                                          const SizedBox(height: 6),
-                                          Wrap(
-                                            spacing: 8,
-                                            runSpacing: 4,
-                                            crossAxisAlignment: WrapCrossAlignment.center,
-                                            children: [
-                                              Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                                decoration: BoxDecoration(
-                                                  color: color.withOpacity(0.12),
-                                                  borderRadius: BorderRadius.circular(8),
-                                                  border: Border.all(color: color.withOpacity(0.3)),
-                                                ),
-                                                child: Text(
-                                                  t.categoryName,
-                                                  style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.bold),
-                                                ),
-                                              ),
-                                              Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Icon(LucideIcons.calendar, size: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                                                  const SizedBox(width: 4),
-                                                  Text(
-                                                    _formatDate.format(t.date),
-                                                    style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                      const SizedBox(height: 6),
+                                    ],
+                                    Row(
                                       children: [
-                                        Text(
-                                          '${isIncome ? '+' : '-'}${_formatCurrency.format(t.amount)}',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.bold,
-                                            color: baseColor,
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: color.withOpacity(0.12),
+                                            borderRadius: BorderRadius.circular(12),
+                                            border: Border.all(color: color.withOpacity(0.3)),
+                                          ),
+                                          child: Text(
+                                            t.categoryName,
+                                            style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.bold),
                                           ),
                                         ),
-                                        const SizedBox(height: 4),
-                                        SizedBox(
-                                          height: 28,
-                                          width: 28,
-                                          child: IconButton(
-                                            padding: EdgeInsets.zero,
-                                            iconSize: 16,
-                                            icon: const Icon(LucideIcons.trash2, color: Colors.grey),
-                                            hoverColor: Colors.red.withOpacity(0.1),
-                                            onPressed: () => _deleteTransaction(t.id),
-                                          ),
+                                        const SizedBox(width: 8),
+                                        Icon(LucideIcons.calendar, size: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          _formatDate.format(t.date),
+                                          style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
                                         ),
                                       ],
                                     ),
                                   ],
                                 ),
+                              ),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    '${isIncome ? '+' : '-'}${_formatCurrency.format(t.amount)}',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: baseColor,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  IconButton(
+                                    icon: const Icon(LucideIcons.trash2, size: 16, color: Colors.grey),
+                                    hoverColor: Colors.red.withOpacity(0.1),
+                                    onPressed: () => _deleteTransaction(t.id),
+                                  ),
+                                ],
                               ),
                             ).animate().fade(duration: 400.ms, delay: (50 * index).ms).slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut);
                           },

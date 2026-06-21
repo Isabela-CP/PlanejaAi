@@ -18,7 +18,6 @@ GoRouter createRouter(AuthProvider authProvider) {
   return GoRouter(
     initialLocation: '/dashboard',
     navigatorKey: _rootNavigatorKey,
-    refreshListenable: authProvider,
     redirect: (context, state) {
       final isLoggedIn = authProvider.isAuthenticated;
       final isLoginRoute = state.uri.toString() == '/login' || state.uri.toString() == '/signup';

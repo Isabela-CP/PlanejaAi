@@ -73,7 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Logo(size: 100, showText: false).animate().fade().scale(),
+                    const Logo(size: 48, showText: false).animate().fade().scale(),
                     const SizedBox(height: 24),
                     Text(
                       'Bem-vindo ao Planeja.AI',
@@ -86,7 +86,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Text(
                       'Entre na sua conta',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color: Theme.of(context).colorScheme.secondary,
                           ),
                     ).animate().fade(delay: 200.ms),
                     const SizedBox(height: 32),
