@@ -45,7 +45,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           final totalExpenses =
               (summaryData['despesa'] as num?)?.toDouble() ?? 0.0;
           final balance = (summaryData['liquido'] as num?)?.toDouble() ?? 0.0;
-          final savings = 0.0;
+          final savings = (summaryData['economia'] as num?)?.toDouble() ?? 0.0;
 
           final categoryBreakdown = provider.reportCategoryBreakdown ?? [];
           final evolucaoList = provider.reportBalanceEvolution ?? [];
@@ -56,16 +56,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Header
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Painel',
-                      style:
-                          TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-                    ).animate().fade().slideX(),
-                  ],
-                ),
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 16,
+              runSpacing: 16,
+              children: [
+                const Text(
+                  'Painel',
+                  style:
+                      TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                ).animate().fade().slideX(),
+              ],
+            ),
                 const SizedBox(height: 24),
 
                 // Summary Cards
