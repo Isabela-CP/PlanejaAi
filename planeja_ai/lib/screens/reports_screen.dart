@@ -215,45 +215,51 @@ class _ReportsScreenState extends State<ReportsScreen> {
             const SizedBox(height: 20),
 
             // Data início, Data fim, Tipo e Botão
-            LayoutBuilder(builder: (context, constraints) {
-              final isWide = constraints.maxWidth > 900;
-              Widget startDateField = _buildDateField(
-                label: 'Data de Início',
-                value: _startDate,
-                onTap: () => _pickDate(isStart: true),
-              );
-              Widget endDateField = _buildDateField(
-                label: 'Data de Fim',
-                value: _endDate,
-                onTap: () => _pickDate(isStart: false),
-              );
-              Widget typeField = Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(left: 4, bottom: 8),
-                    child: Text('Tipo de Transação', style: theme.textTheme.titleSmall),
+            Wrap(
+              spacing: 16,
+              runSpacing: 16,
+              crossAxisAlignment: WrapCrossAlignment.end,
+              children: [
+                SizedBox(
+                  width: 200,
+                  child: _buildDateField(
+                    label: 'Data de Início',
+                    value: _startDate,
+                    onTap: () => _pickDate(isStart: true),
                   ),
-                  DropdownButtonFormField<String>(
-                    value: _transactionType,
-                    items: _transactionTypes.map((t) => DropdownMenuItem(
-                      value: t['value'],
-                      child: Text(t['label']!),
-                    )).toList(),
-                    onChanged: (val) => setState(() => _transactionType = val!),
-                    decoration: const InputDecoration(hintText: 'Selecione'),
+                ),
+                SizedBox(
+                  width: 200,
+                  child: _buildDateField(
+                    label: 'Data de Fim',
+                    value: _endDate,
+                    onTap: () => _pickDate(isStart: false),
                   ),
-                ],
-              );
-              Widget generateBtn = Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (!isWide) const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 4, bottom: 8),
-                    child: Text('', style: theme.textTheme.titleSmall),
+                ),
+                SizedBox(
+                  width: 250,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(left: 4, bottom: 8),
+                        child: Text('Tipo de Transação', style: theme.textTheme.titleSmall),
+                      ),
+                      DropdownButtonFormField<String>(
+                        value: _transactionType,
+                        items: _transactionTypes.map((t) => DropdownMenuItem(
+                          value: t['value'],
+                          child: Text(t['label']!),
+                        )).toList(),
+                        onChanged: (val) => setState(() => _transactionType = val!),
+                        decoration: const InputDecoration(hintText: 'Selecione'),
+                      ),
+                    ],
                   ),
-                  ElevatedButton.icon(
+                ),
+                SizedBox(
+                  width: 200,
+                  child: ElevatedButton.icon(
                     onPressed: _isGenerating ? null : _generateReport,
                     icon: _isGenerating
                         ? const SizedBox(
@@ -265,37 +271,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: theme.colorScheme.primary,
                       foregroundColor: theme.colorScheme.onPrimary,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding: const EdgeInsets.symmetric(vertical: 20),
                     ),
                   ),
-                ],
-              );
-
-              if (isWide) {
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(child: startDateField),
-                    const SizedBox(width: 16),
-                    Expanded(child: endDateField),
-                    const SizedBox(width: 16),
-                    Expanded(child: typeField),
-                    const SizedBox(width: 16),
-                    Expanded(child: generateBtn),
-                  ],
-                );
-              } else {
-                return Column(children: [
-                  startDateField,
-                  const SizedBox(height: 16),
-                  endDateField,
-                  const SizedBox(height: 16),
-                  typeField,
-                  const SizedBox(height: 16),
-                  generateBtn,
-                ]);
-              }
-            }),
+                ),
+              ],
+            ),
 
             const SizedBox(height: 24),
             Divider(color: theme.dividerColor),
