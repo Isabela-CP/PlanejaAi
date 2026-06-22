@@ -737,37 +737,87 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                       ),
                                     ),
                                     const SizedBox(width: 8),
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.end,
-                                      children: [
-                                        Text(
-                                          '${isIncome ? '+' : '-'}${_formatCurrency.format(t.amount)}',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.bold,
-                                            color: baseColor,
+                                    MediaQuery.of(context).size.width > 600
+                                        ? Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                '${isIncome ? '+' : '-'}${_formatCurrency.format(t.amount)}',
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: baseColor,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 16),
+                                              SizedBox(
+                                                height: 28,
+                                                width: 28,
+                                                child: IconButton(
+                                                  padding: EdgeInsets.zero,
+                                                  iconSize: 16,
+                                                  icon: const Icon(LucideIcons.edit3, color: Colors.grey),
+                                                  hoverColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                                  onPressed: () => _handleEditTransaction(t),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              SizedBox(
+                                                height: 28,
+                                                width: 28,
+                                                child: IconButton(
+                                                  padding: EdgeInsets.zero,
+                                                  iconSize: 16,
+                                                  icon: const Icon(LucideIcons.trash2, color: Colors.grey),
+                                                  hoverColor: Colors.red.withOpacity(0.1),
+                                                  onPressed: () => _deleteTransaction(t.id),
+                                                ),
+                                              ),
+                                            ],
+                                          )
+                                        : Column(
+                                            crossAxisAlignment: CrossAxisAlignment.end,
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                '${isIncome ? '+' : '-'}${_formatCurrency.format(t.amount)}',
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: baseColor,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  SizedBox(
+                                                    height: 28,
+                                                    width: 28,
+                                                    child: IconButton(
+                                                      padding: EdgeInsets.zero,
+                                                      iconSize: 16,
+                                                      icon: const Icon(LucideIcons.edit3, color: Colors.grey),
+                                                      hoverColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                                      onPressed: () => _handleEditTransaction(t),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  SizedBox(
+                                                    height: 28,
+                                                    width: 28,
+                                                    child: IconButton(
+                                                      padding: EdgeInsets.zero,
+                                                      iconSize: 16,
+                                                      icon: const Icon(LucideIcons.trash2, color: Colors.grey),
+                                                      hoverColor: Colors.red.withOpacity(0.1),
+                                                      onPressed: () => _deleteTransaction(t.id),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
                                           ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                  IconButton(
-                                    icon: const Icon(LucideIcons.edit3, size: 16, color: Colors.grey),
-                                    hoverColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                                    onPressed: () => _handleEditTransaction(t),
-                                  ),
-                                  const SizedBox(height: 4),
-                                        SizedBox(
-                                          height: 28,
-                                          width: 28,
-                                          child: IconButton(
-                                            padding: EdgeInsets.zero,
-                                            iconSize: 16,
-                                            icon: const Icon(LucideIcons.trash2, color: Colors.grey),
-                                            hoverColor: Colors.red.withOpacity(0.1),
-                                            onPressed: () => _deleteTransaction(t.id),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
                                   ],
                                 ),
                               ),
