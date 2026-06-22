@@ -9,10 +9,12 @@ class AuthProvider extends ChangeNotifier {
   
   bool _isAuthenticated = false;
   String? _username;
+  Map<String, dynamic>? _userData;
   bool _isLoading = false;
 
   bool get isAuthenticated => _isAuthenticated;
   String? get username => _username;
+  Map<String, dynamic>? get userData => _userData;
   bool get isLoading => _isLoading;
 
   AuthProvider() {
@@ -33,9 +35,10 @@ class AuthProvider extends ChangeNotifier {
       final response = await _apiService.get('/auth/me');
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        final data = _apiService.decode(response);
         _isAuthenticated = true;
         _username = data['name'];
+        _userData = data;
         notifyListeners();
       } else {
         // Token is invalid or expired
@@ -57,7 +60,7 @@ class AuthProvider extends ChangeNotifier {
         body: {'email': email, 'password': password},
       );
 
-      final data = json.decode(response.body);
+      final data = _apiService.decode(response);
 
       if (response.statusCode == 200) {
         final prefs = await SharedPreferences.getInstance();
@@ -65,8 +68,10 @@ class AuthProvider extends ChangeNotifier {
         _isAuthenticated = true;
         _username = data['user']['name'];
         notifyListeners();
+        // Fetch complete user data
+        await fetchMe();
       } else {
-        throw Exception(data['error'] ?? 'Falha na autenticação');
+        throw Exception(data is Map ? (data['error'] ?? 'Falha na autenticação') : 'Falha na autenticação');
       }
     } on SocketException {
       throw Exception('Sem conexão com o servidor. Verifique sua internet.');
@@ -83,13 +88,13 @@ class AuthProvider extends ChangeNotifier {
         body: {'email': email, 'password': password, 'name': name},
       );
 
-      final data = json.decode(response.body);
+      final data = _apiService.decode(response);
 
       if (response.statusCode == 201) {
         // Automatically login after successful registration
         await login(email, password);
       } else {
-        throw Exception(data['error'] ?? 'Falha ao criar conta');
+        throw Exception(data is Map ? (data['error'] ?? 'Falha ao criar conta') : 'Falha ao criar conta');
       }
     } on SocketException {
       throw Exception('Sem conexão com o servidor. Verifique sua internet.');
@@ -105,7 +110,55 @@ class AuthProvider extends ChangeNotifier {
       await prefs.remove('jwt_token');
       _isAuthenticated = false;
       _username = null;
+      _userData = null;
       notifyListeners();
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> fetchMe() async {
+    final response = await _apiService.get('/auth/me');
+    if (response.statusCode == 200) {
+      _userData = _apiService.decode(response);
+      _username = _userData?['name'];
+      notifyListeners();
+    }
+  }
+
+  Future<void> updateProfile(Map<String, dynamic> data) async {
+    _setLoading(true);
+    try {
+      final response = await _apiService.put(
+        '/auth/me',
+        body: data,
+      );
+      if (response.statusCode == 200) {
+        await fetchMe();
+      } else {
+        final err = _apiService.decode(response);
+        throw Exception(err is Map ? (err['error'] ?? 'Falha ao atualizar perfil') : 'Falha ao atualizar perfil');
+      }
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> uploadAvatar(List<int> fileBytes, String filename) async {
+    _setLoading(true);
+    try {
+      final response = await _apiService.multipartPost(
+        '/auth/avatar',
+        'avatar',
+        fileBytes,
+        filename,
+      );
+      if (response.statusCode == 200) {
+        await fetchMe();
+      } else {
+        final err = _apiService.decode(response);
+        throw Exception(err is Map ? (err['error'] ?? 'Falha ao fazer upload da imagem') : 'Falha ao fazer upload da imagem');
+      }
     } finally {
       _setLoading(false);
     }

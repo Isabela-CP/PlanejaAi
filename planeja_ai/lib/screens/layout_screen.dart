@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/finance_provider.dart';
 import '../widgets/logo.dart';
 
 class _Destination {
@@ -51,12 +52,24 @@ class LayoutScreen extends StatelessWidget {
           children: [
             Container(
               width: 256, // Fixed width like w-64 in tailwind
-              color: Theme.of(context).cardTheme.color,
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardTheme.color,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(2, 0),
+                  ),
+                ],
+              ),
               child: Column(
                 children: [
-                  const Padding(
-                    padding: EdgeInsets.all(24.0),
-                    child: Logo(size: 32, showText: true),
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Padding(
+                      padding: EdgeInsets.only(left: 32.0, top: 32.0, bottom: 24.0),
+                      child: Logo(size: 48, showText: true, mainAxisAlignment: MainAxisAlignment.start),
+                    ),
                   ),
                   const Divider(),
                   Expanded(
@@ -96,6 +109,7 @@ class LayoutScreen extends StatelessWidget {
                       leading: const Icon(LucideIcons.logOut, color: Colors.red),
                       title: const Text('Sair', style: TextStyle(color: Colors.red)),
                       onTap: () {
+                        context.read<FinanceProvider>().clear();
                         context.read<AuthProvider>().logout();
                       },
                     ),
@@ -103,7 +117,6 @@ class LayoutScreen extends StatelessWidget {
                 ],
               ),
             ),
-            const VerticalDivider(thickness: 1, width: 1),
             Expanded(
               child: Container(
                 color: Theme.of(context).scaffoldBackgroundColor,
@@ -117,6 +130,7 @@ class LayoutScreen extends StatelessWidget {
       return Scaffold(
         body: child,
         bottomNavigationBar: NavigationBar(
+          labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
           selectedIndex: currentIndex,
           onDestinationSelected: (index) => _onItemTapped(index, context),
           destinations: _destinations.map((dest) {

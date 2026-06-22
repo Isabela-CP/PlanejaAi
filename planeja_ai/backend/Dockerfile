@@ -22,7 +22,7 @@ COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy only the files strictly required to run the application (no wildcard COPY)
-COPY src/ /app/src/
+COPY --chown=appuser:appuser src/ /app/src/
 
 # Switch to the non-root user
 USER appuser

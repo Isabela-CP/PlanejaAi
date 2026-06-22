@@ -90,15 +90,6 @@ class _BudgetFormState extends State<BudgetForm> {
              (widget.budgetToEdit != null && widget.budgetToEdit!.categoryId == cat.id);
     }).toList();
 
-    if (_selectedCategoryId == null && availableCategories.isNotEmpty && widget.budgetToEdit == null) {
-      try {
-        final outrosCat = availableCategories.firstWhere(
-          (cat) => cat.name.toLowerCase() == 'outros',
-        );
-        _selectedCategoryId = outrosCat.id;
-      } catch (_) {
-      }
-    }
     return Card(
       elevation: 2,
       margin: const EdgeInsets.only(bottom: 24),
