@@ -40,20 +40,17 @@ const _kIcons = <String, IconData>{
   'film': LucideIcons.film,
 };
 
-const _kColorPalette = <Color>[
-  Color(0xFFEF4444), Color(0xFFF97316), Color(0xFFF59E0B), Color(0xFF10B981),
-  Color(0xFF06B6D4), Color(0xFF3B82F6), Color(0xFF8B5CF6), Color(0xFFEC4899),
-  Color(0xFF6B7280), Color(0xFF14B8A6), Color(0xFF84CC16), Color(0xFFFF5733),
-];
 
 class GoalForm extends StatefulWidget {
   final Function(Goal) onAddGoal;
   final VoidCallback onCancel;
+  final Goal? goalToEdit;
 
   const GoalForm({
     Key? key,
     required this.onAddGoal,
     required this.onCancel,
+    this.goalToEdit,
   }) : super(key: key);
 
   @override
@@ -74,6 +71,13 @@ class _GoalFormState extends State<GoalForm> {
   @override
   void initState() {
     super.initState();
+    if (widget.goalToEdit != null) {
+      _nameController.text = widget.goalToEdit!.name;
+      _amountController.text = widget.goalToEdit!.amount.toStringAsFixed(2).replaceAll('.', ',');
+      _categoryController.text = widget.goalToEdit!.category;
+      _selectedDate = widget.goalToEdit!.deadline;
+    }
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<FinanceProvider>().fetchCategories(type: 'goal');
     });
@@ -121,19 +125,30 @@ class _GoalFormState extends State<GoalForm> {
         }
       }
 
-      final newGoal = Goal(
-        id: '',
+      final goalData = Goal(
+        id: widget.goalToEdit?.id ?? '',
         name: name,
         amount: amount,
-        currentAmount: 0.0,
+        currentAmount: widget.goalToEdit?.currentAmount ?? 0.0,
         deadline: _selectedDate!,
         categoryId: categoryId,
         customCategory: customCategory,
       );
 
       try {
-        await provider.addGoal(newGoal);
-        widget.onAddGoal(newGoal);
+        if (widget.goalToEdit != null) {
+          await provider.updateGoal(
+            widget.goalToEdit!.id,
+            name: name,
+            amount: amount,
+            deadline: _selectedDate,
+            categoryId: categoryId,
+            customCategory: customCategory,
+          );
+        } else {
+          await provider.addGoal(goalData);
+        }
+        widget.onAddGoal(goalData);
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -198,10 +213,10 @@ class _GoalFormState extends State<GoalForm> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.track_changes, color: theme.colorScheme.primary),
+                    Icon(widget.goalToEdit != null ? Icons.edit_note : Icons.track_changes, color: theme.colorScheme.primary),
                     const SizedBox(width: 8),
                     Text(
-                      'Criar Nova Meta Financeira',
+                      widget.goalToEdit != null ? 'Editar Meta Financeira' : 'Criar Nova Meta Financeira',
                       style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                     ),
                   ],
@@ -461,8 +476,8 @@ class _GoalFormState extends State<GoalForm> {
                       flex: 1,
                       child: ElevatedButton.icon(
                         onPressed: _submitForm,
-                        icon: const Icon(Icons.add, size: 18),
-                        label: const Text('Criar Meta'),
+                        icon: Icon(widget.goalToEdit != null ? Icons.save : Icons.add, size: 18),
+                        label: Text(widget.goalToEdit != null ? 'Salvar Alterações' : 'Criar Meta'),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -492,6 +507,7 @@ class _GoalFormState extends State<GoalForm> {
       context: context,
       builder: (ctx) => CategoryDialog(editing: editing, initialName: name, type: 'goal'),
     ).then((result) {
+      if (!mounted) return;
       setState(() {
         _isDialogOpen = false;
       });

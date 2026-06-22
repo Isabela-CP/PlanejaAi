@@ -76,7 +76,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Logo(size: 48, showText: false).animate().fade().scale(),
+                    const Logo(size: 100, showText: false).animate().fade().scale(),
                     const SizedBox(height: 24),
                     Text(
                       'Crie sua conta',
@@ -89,7 +89,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     Text(
                       'Comece a organizar suas finanças',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.secondary,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                     ).animate().fade(delay: 200.ms),
                     const SizedBox(height: 32),

@@ -15,6 +15,7 @@ class BudgetsScreen extends StatefulWidget {
 
 class _BudgetsScreenState extends State<BudgetsScreen> {
   bool _showForm = false;
+  Budget? _budgetToEdit;
 
   @override
   void initState() {
@@ -29,19 +30,38 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
   void _toggleForm() {
     setState(() {
       _showForm = !_showForm;
+      if (!_showForm) {
+        _budgetToEdit = null;
+      }
+    });
+  }
+
+  void _handleEditBudget(Budget budget) {
+    setState(() {
+      _budgetToEdit = budget;
+      _showForm = true;
     });
   }
 
   Future<void> _handleAddBudget(String categoryId, double limit, int resetDay) async {
     final provider = Provider.of<FinanceProvider>(context, listen: false);
     try {
-      await provider.addBudget(
-        categoryId: categoryId,
-        limit: limit,
-        resetDay: resetDay,
-      );
+      if (_budgetToEdit != null) {
+        await provider.updateBudget(
+          _budgetToEdit!.id,
+          limit: limit,
+          resetDay: resetDay,
+        );
+      } else {
+        await provider.addBudget(
+          categoryId: categoryId,
+          limit: limit,
+          resetDay: resetDay,
+        );
+      }
       setState(() {
         _showForm = false;
+        _budgetToEdit = null;
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -114,11 +134,18 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
             // Header estilo Painel/Transações
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const Text(
-                  'Orçamentos',
-                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-                ).animate().fade(duration: 300.ms).slideX(begin: -0.1, end: 0, duration: 300.ms, curve: Curves.easeOut),
+                Expanded(
+                  child: Text(
+                    'Orçamentos',
+                    style: TextStyle(
+                      fontSize: MediaQuery.of(context).size.width < 600 ? 24 : 32,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ).animate().fade(duration: 300.ms).slideX(begin: -0.1, end: 0, duration: 300.ms, curve: Curves.easeOut),
+                ),
+                const SizedBox(width: 12),
                 ElevatedButton.icon(
                   onPressed: _toggleForm,
                   icon: Icon(_showForm ? Icons.close : Icons.add, size: 16),
@@ -135,6 +162,7 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
             if (_showForm)
               BudgetForm(
                 currentBudgets: budgets,
+                budgetToEdit: _budgetToEdit,
                 onAddBudget: _handleAddBudget,
                 onCancel: _toggleForm,
               ).animate()
@@ -182,6 +210,7 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
                                 return BudgetCard(
                                   budget: budget,
                                   onDelete: () => _handleDeleteBudget(budget),
+                                  onEdit: _handleEditBudget,
                                 )
                                 .animate()
                                 .fade(duration: 400.ms, delay: (50 * index).ms)

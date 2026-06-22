@@ -64,6 +64,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   bool _showCategoryOptions = false;
   bool _isDialogOpen = false;
   DateTime _date = DateTime.now();
+  Transaction? _transactionToEdit;
+
 
   bool _isLoading = false;
 
@@ -73,6 +75,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   @override
   void initState() {
     super.initState();
+    _categoryController.text = 'Outros';
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<FinanceProvider>();
       provider.fetchCategories();
@@ -149,6 +152,19 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     }
   }
 
+  void _handleEditTransaction(Transaction tx) {
+    setState(() {
+      _transactionToEdit = tx;
+      _showForm = true;
+      _type = tx.type;
+      _titleController.text = tx.title;
+      _amountController.text = tx.amount.toStringAsFixed(2).replaceAll('.', ',');
+      _descriptionController.text = tx.description;
+      _categoryController.text = tx.categoryName;
+      _date = tx.date;
+    });
+  }
+
   Future<void> _deleteTransaction(String id) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -221,14 +237,30 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     );
 
     try {
-      await provider.addTransaction(newTransaction);
+      if (_transactionToEdit != null) {
+        final updatedTx = _transactionToEdit!.copyWith(
+          title: titleText,
+          type: _type,
+          amount: amount,
+          categoryName: matched.id.isNotEmpty ? matched.name : categoryText,
+          category: matched.id.isNotEmpty ? matched : null,
+          date: _date,
+          description: _descriptionController.text,
+        );
+        await provider.updateTransaction(_transactionToEdit!.id, updatedTx);
+      } else {
+        await provider.addTransaction(newTransaction);
+      }
+
       setState(() {
         _showForm = false;
+        _transactionToEdit = null;
         _titleController.clear();
         _amountController.clear();
         _descriptionController.clear();
-        _categoryController.clear();
+        _categoryController.text = 'Outros';
         _showCategoryOptions = false;
+        _date = DateTime.now();
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -257,16 +289,29 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             // Header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const Text(
-                  'Transações',
-                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-                ).animate().fade().slideX(),
+                Expanded(
+                  child: Text(
+                    'Transações',
+                    style: TextStyle(
+                      fontSize: MediaQuery.of(context).size.width < 600 ? 24 : 32,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ).animate().fade().slideX(),
+                ),
+                const SizedBox(width: 12),
                 ElevatedButton.icon(
                   onPressed: () => setState(() {
                     _showForm = !_showForm;
-                    _titleController.clear();
-                    _categoryController.clear();
+                    if (!_showForm) {
+                      _transactionToEdit = null;
+                      _titleController.clear();
+                      _amountController.clear();
+                      _descriptionController.clear();
+                      _categoryController.text = 'Outros';
+                      _date = DateTime.now();
+                    }
                     _showCategoryOptions = false;
                   }),
                   icon: const Icon(LucideIcons.plus, size: 16),
@@ -296,9 +341,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Nova Transação',
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        Text(
+                          _transactionToEdit != null ? 'Editar Transação' : 'Nova Transação',
+                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 24),
                         TextField(
@@ -536,14 +581,18 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                             ),
                             child: _isLoading
                                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                : const Text('Adicionar Transação'),
+                                : Text(_transactionToEdit != null ? 'Salvar Alterações' : 'Adicionar Transação'),
                           ),
                           const SizedBox(width: 16),
                           OutlinedButton(
                             onPressed: () => setState(() {
                               _showForm = false;
+                              _transactionToEdit = null;
                               _titleController.clear();
-                              _categoryController.clear();
+                              _amountController.clear();
+                              _descriptionController.clear();
+                              _categoryController.text = 'Outros';
+                              _date = DateTime.now();
                               _showCategoryOptions = false;
                             }),
                             style: OutlinedButton.styleFrom(
@@ -558,8 +607,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                   ),
                 ),
               ),
-            ).animate().fade(duration: 300.ms).slideY(begin: -0.1, end: 0, duration: 300.ms, curve: Curves.easeOut),
-              const SizedBox(height: 24),
+            ),
+
             ],
 
             // List
@@ -604,6 +653,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                           itemCount: list.length,
                           separatorBuilder: (context, index) => const Divider(height: 1),
                           itemBuilder: (context, index) {
+                            final theme = Theme.of(context);
                             final t = list[index];
                             final isIncome = t.type == 'income';
                             final baseColor = isIncome ? const Color(0xFF10B981) : const Color(0xFFEF4444);
@@ -614,84 +664,162 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                 ? (_kIcons[t.category!.iconName] ?? LucideIcons.helpCircle)
                                 : (isIncome ? LucideIcons.arrowUpRight : LucideIcons.arrowDownLeft);
 
-                            return ListTile(
-                              contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                            return InkWell(
+                              onTap: () {},
                               hoverColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
-                              leading: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: color.withOpacity(0.15),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  icon,
-                                  color: color,
-                                  size: 20,
-                                ),
-                              ),
-                              title: Text(
-                                t.title,
-                                style: const TextStyle(fontWeight: FontWeight.w600),
-                              ),
-                              subtitle: Padding(
-                                padding: const EdgeInsets.only(top: 4),
-                                child: Column(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                                child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    if (t.description.isNotEmpty) ...[
-                                      Text(
-                                        t.description,
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.85),
-                                        ),
+                                    Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: color.withOpacity(0.15),
+                                        shape: BoxShape.circle,
                                       ),
-                                      const SizedBox(height: 6),
-                                    ],
-                                    Row(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: color.withOpacity(0.12),
-                                            borderRadius: BorderRadius.circular(12),
-                                            border: Border.all(color: color.withOpacity(0.3)),
-                                          ),
-                                          child: Text(
-                                            t.categoryName,
-                                            style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.bold),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Icon(LucideIcons.calendar, size: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          _formatDate.format(t.date),
-                                          style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                                        ),
-                                      ],
+                                      child: Icon(icon, color: color, size: 20),
                                     ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            t.title,
+                                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                                          ),
+                                          if (t.description.isNotEmpty) ...[
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              t.description,
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.85),
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
+                                          const SizedBox(height: 6),
+                                          Wrap(
+                                            spacing: 8,
+                                            runSpacing: 4,
+                                            crossAxisAlignment: WrapCrossAlignment.center,
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: color.withOpacity(0.12),
+                                                  borderRadius: BorderRadius.circular(8),
+                                                  border: Border.all(color: color.withOpacity(0.3)),
+                                                ),
+                                                child: Text(
+                                                  t.categoryName,
+                                                  style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.bold),
+                                                ),
+                                              ),
+                                              Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(LucideIcons.calendar, size: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    _formatDate.format(t.date),
+                                                    style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+      
+                                  ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    MediaQuery.of(context).size.width > 600
+                                        ? Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                '${isIncome ? '+' : '-'}${_formatCurrency.format(t.amount)}',
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: baseColor,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 16),
+                                              SizedBox(
+                                                height: 28,
+                                                width: 28,
+                                                child: IconButton(
+                                                  padding: EdgeInsets.zero,
+                                                  iconSize: 16,
+                                                  icon: const Icon(LucideIcons.edit3, color: Colors.grey),
+                                                  hoverColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                                  onPressed: () => _handleEditTransaction(t),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              SizedBox(
+                                                height: 28,
+                                                width: 28,
+                                                child: IconButton(
+                                                  padding: EdgeInsets.zero,
+                                                  iconSize: 16,
+                                                  icon: const Icon(LucideIcons.trash2, color: Colors.grey),
+                                                  hoverColor: Colors.red.withOpacity(0.1),
+                                                  onPressed: () => _deleteTransaction(t.id),
+                                                ),
+                                              ),
+                                            ],
+                                          )
+                                        : Column(
+                                            crossAxisAlignment: CrossAxisAlignment.end,
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                '${isIncome ? '+' : '-'}${_formatCurrency.format(t.amount)}',
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: baseColor,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  SizedBox(
+                                                    height: 28,
+                                                    width: 28,
+                                                    child: IconButton(
+                                                      padding: EdgeInsets.zero,
+                                                      iconSize: 16,
+                                                      icon: const Icon(LucideIcons.edit3, color: Colors.grey),
+                                                      hoverColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                                      onPressed: () => _handleEditTransaction(t),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  SizedBox(
+                                                    height: 28,
+                                                    width: 28,
+                                                    child: IconButton(
+                                                      padding: EdgeInsets.zero,
+                                                      iconSize: 16,
+                                                      icon: const Icon(LucideIcons.trash2, color: Colors.grey),
+                                                      hoverColor: Colors.red.withOpacity(0.1),
+                                                      onPressed: () => _deleteTransaction(t.id),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
                                   ],
                                 ),
-                              ),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    '${isIncome ? '+' : '-'}${_formatCurrency.format(t.amount)}',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: baseColor,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  IconButton(
-                                    icon: const Icon(LucideIcons.trash2, size: 16, color: Colors.grey),
-                                    hoverColor: Colors.red.withOpacity(0.1),
-                                    onPressed: () => _deleteTransaction(t.id),
-                                  ),
-                                ],
                               ),
                             ).animate().fade(duration: 400.ms, delay: (50 * index).ms).slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut);
                           },

@@ -40,11 +40,13 @@ const _kIcons = <String, IconData>{
 class BudgetCard extends StatelessWidget {
   final Budget budget;
   final VoidCallback? onDelete;
+  final Function(Budget)? onEdit;
 
   const BudgetCard({
     Key? key,
     required this.budget,
     this.onDelete,
+    this.onEdit,
   }) : super(key: key);
 
   @override
@@ -140,6 +142,15 @@ class BudgetCard extends StatelessWidget {
                         ],
                       ),
                     ),
+                    if (onEdit != null) ...[
+                      const SizedBox(width: 4),
+                      IconButton(
+                        constraints: const BoxConstraints(),
+                        padding: EdgeInsets.zero,
+                        icon: Icon(LucideIcons.edit3, size: 16, color: theme.colorScheme.primary.withOpacity(0.7)),
+                        onPressed: () => onEdit!(budget),
+                      ),
+                    ],
                     if (onDelete != null) ...[
                       const SizedBox(width: 4),
                       IconButton(

@@ -5,6 +5,12 @@ import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../providers/finance_provider.dart';
+import 'package:file_picker/file_picker.dart' as file_picker;
+import 'dart:io' as dart_io;
+import 'dart:typed_data';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:excel/excel.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -177,7 +183,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     }
   }
 
-  void _exportReport(String format) {
+  Future<void> _exportReport(String format) async {
     if (!_hasReport) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -187,9 +193,257 @@ class _ReportsScreenState extends State<ReportsScreen> {
       );
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Exportando como ${format.toUpperCase()}...')),
-    );
+
+    if (!['csv', 'pdf', 'excel'].contains(format)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Formato $format desconhecido!')),
+      );
+      return;
+    }
+
+    try {
+      final financeProvider = context.read<FinanceProvider>();
+      final summary = financeProvider.reportSummary ?? {};
+      final rawBreakdown = financeProvider.reportCategoryBreakdown ?? [];
+      
+      final breakdown = rawBreakdown.where((item) {
+        final catName = item['category'] as String? ?? '';
+        if (_selectedCategories.isNotEmpty && !_selectedCategories.contains(catName)) {
+          return false;
+        }
+        return true;
+      }).toList();
+
+      final evolution = financeProvider.reportBalanceEvolution ?? [];
+
+      String? outputFile;
+      
+      if (format == 'csv') {
+        final totalIncome = (summary['receita'] as num?)?.toDouble() ?? 0.0;
+        final totalExpenses = (summary['despesa'] as num?)?.toDouble() ?? 0.0;
+        final netIncome = (summary['liquido'] as num?)?.toDouble() ?? 0.0;
+
+        StringBuffer csv = StringBuffer();
+        csv.writeln('Relatorio Financeiro Planeja.Ai');
+        csv.writeln('Data Inicial:;${_formatDate.format(_startDate!)}');
+        csv.writeln('Data Final:;${_formatDate.format(_endDate!)}');
+        csv.writeln('');
+        csv.writeln('RESUMO');
+        csv.writeln('Receita Total;Despesas Totais;Renda Liquida');
+        csv.writeln('${totalIncome.toStringAsFixed(2)};${totalExpenses.toStringAsFixed(2)};${netIncome.toStringAsFixed(2)}');
+        csv.writeln('');
+        csv.writeln('DESPESAS POR CATEGORIA');
+        csv.writeln('Categoria;Valor;Porcentagem');
+        for (var item in breakdown) {
+          final cat = item['category'] ?? 'Sem Categoria';
+          final val = (item['amount'] as num?)?.toDouble() ?? 0.0;
+          final pct = (item['percentage'] as num?)?.toDouble() ?? 0.0;
+          csv.writeln('$cat;${val.toStringAsFixed(2)};${pct.toStringAsFixed(2)}%');
+        }
+        csv.writeln('');
+        csv.writeln('EVOLUCAO DO SALDO');
+        csv.writeln('Mes;Receitas;Despesas;Saldo;Acumulado');
+        for (var item in evolution) {
+          final mes = item['month'] ?? '';
+          final rec = (item['income'] as num?)?.toDouble() ?? 0.0;
+          final des = (item['expense'] as num?)?.toDouble() ?? 0.0;
+          final sal = (item['net'] as num?)?.toDouble() ?? 0.0;
+          final acu = (item['cumulative'] as num?)?.toDouble() ?? 0.0;
+          csv.writeln('$mes;${rec.toStringAsFixed(2)};${des.toStringAsFixed(2)};${sal.toStringAsFixed(2)};${acu.toStringAsFixed(2)}');
+        }
+
+        outputFile = await file_picker.FilePicker.saveFile(
+          dialogTitle: 'Onde deseja salvar o relatório?',
+          fileName: 'relatorio_planeja_ai.csv',
+          type: file_picker.FileType.custom,
+          allowedExtensions: ['csv'],
+        );
+
+        if (outputFile != null) {
+          final file = dart_io.File(outputFile);
+          await file.writeAsString(csv.toString());
+        }
+      } else if (format == 'pdf') {
+        outputFile = await file_picker.FilePicker.saveFile(
+          dialogTitle: 'Onde deseja salvar o relatório PDF?',
+          fileName: 'relatorio_planeja_ai.pdf',
+          type: file_picker.FileType.custom,
+          allowedExtensions: ['pdf'],
+        );
+
+        if (outputFile != null) {
+          final bytes = await _generatePdfBytes(summary, breakdown, evolution);
+          final file = dart_io.File(outputFile);
+          await file.writeAsBytes(bytes);
+        }
+      } else if (format == 'excel') {
+        outputFile = await file_picker.FilePicker.saveFile(
+          dialogTitle: 'Onde deseja salvar o relatório Excel?',
+          fileName: 'relatorio_planeja_ai.xlsx',
+          type: file_picker.FileType.custom,
+          allowedExtensions: ['xlsx'],
+        );
+
+        if (outputFile != null) {
+          final bytes = await _generateExcelBytes(summary, breakdown, evolution);
+          final file = dart_io.File(outputFile);
+          await file.writeAsBytes(bytes);
+        }
+      }
+
+      if (outputFile == null) return; // User canceled
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Relatório salvo com sucesso em $outputFile!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao salvar arquivo: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<Uint8List> _generatePdfBytes(Map summary, List rawBreakdown, List evolution) async {
+    final pdf = pw.Document();
+    
+    final totalIncome = (summary['receita'] as num?)?.toDouble() ?? 0.0;
+    final totalExpenses = (summary['despesa'] as num?)?.toDouble() ?? 0.0;
+    final netIncome = (summary['liquido'] as num?)?.toDouble() ?? 0.0;
+
+    pdf.addPage(pw.MultiPage(
+      pageFormat: PdfPageFormat.a4,
+      build: (pw.Context context) {
+        return [
+          pw.Header(level: 0, child: pw.Text('Relatório Financeiro - Planeja.Ai', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold))),
+          pw.SizedBox(height: 20),
+          pw.Text('Período: ${_formatDate.format(_startDate!)} a ${_formatDate.format(_endDate!)}'),
+          pw.SizedBox(height: 20),
+          pw.Text('Resumo', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 10),
+          pw.TableHelper.fromTextArray(
+            context: context,
+            data: <List<String>>[
+              <String>['Receita Total', 'Despesas Totais', 'Renda Líquida'],
+              <String>[_formatCurrency.format(totalIncome), _formatCurrency.format(totalExpenses), _formatCurrency.format(netIncome)],
+            ],
+            headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold),
+            headerDecoration: const pw.BoxDecoration(color: PdfColor.fromInt(0xFFD4A017)),
+            rowDecoration: const pw.BoxDecoration(color: PdfColors.white),
+            cellAlignment: pw.Alignment.centerLeft,
+          ),
+          pw.SizedBox(height: 30),
+          pw.Text('Despesas por Categoria', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 10),
+          pw.TableHelper.fromTextArray(
+            context: context,
+            data: <List<String>>[
+              <String>['Categoria', 'Valor', 'Porcentagem'],
+              ...rawBreakdown.map((item) => [
+                item['category'] as String? ?? 'Sem Categoria',
+                _formatCurrency.format((item['amount'] as num?)?.toDouble() ?? 0.0),
+                '${((item['percentage'] as num?)?.toDouble() ?? 0.0).toStringAsFixed(1)}%'
+              ])
+            ],
+            headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold),
+            headerDecoration: const pw.BoxDecoration(color: PdfColor.fromInt(0xFFD4A017)),
+            rowDecoration: const pw.BoxDecoration(color: PdfColors.white),
+            cellAlignment: pw.Alignment.centerLeft,
+          ),
+          pw.SizedBox(height: 30),
+          pw.Text('Evolução do Saldo', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 10),
+          pw.TableHelper.fromTextArray(
+            context: context,
+            data: <List<String>>[
+              <String>['Mês', 'Receitas', 'Despesas', 'Saldo', 'Acumulado'],
+              ...evolution.map((item) => [
+                item['month'] as String? ?? '',
+                _formatCurrency.format((item['income'] as num?)?.toDouble() ?? 0.0),
+                _formatCurrency.format((item['expense'] as num?)?.toDouble() ?? 0.0),
+                _formatCurrency.format((item['net'] as num?)?.toDouble() ?? 0.0),
+                _formatCurrency.format((item['cumulative'] as num?)?.toDouble() ?? 0.0),
+              ])
+            ],
+            headerStyle: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold),
+            headerDecoration: const pw.BoxDecoration(color: PdfColor.fromInt(0xFFD4A017)),
+            rowDecoration: const pw.BoxDecoration(color: PdfColors.white),
+            cellAlignment: pw.Alignment.centerLeft,
+          ),
+        ];
+      },
+    ));
+    return pdf.save();
+  }
+
+  Future<List<int>> _generateExcelBytes(Map summary, List rawBreakdown, List evolution) async {
+    final excel = Excel.createExcel();
+    final sheet = excel['Relatório'];
+    excel.setDefaultSheet('Relatório');
+    
+    final totalIncome = (summary['receita'] as num?)?.toDouble() ?? 0.0;
+    final totalExpenses = (summary['despesa'] as num?)?.toDouble() ?? 0.0;
+    final netIncome = (summary['liquido'] as num?)?.toDouble() ?? 0.0;
+
+    // Cabeçalho
+    sheet.appendRow([TextCellValue('Relatório Financeiro Planeja.Ai')]);
+    sheet.appendRow([TextCellValue('Data Inicial:'), TextCellValue(_formatDate.format(_startDate!))]);
+    sheet.appendRow([TextCellValue('Data Final:'), TextCellValue(_formatDate.format(_endDate!))]);
+    sheet.appendRow([TextCellValue('')]);
+
+    // Resumo
+    sheet.appendRow([TextCellValue('RESUMO')]);
+    sheet.appendRow([TextCellValue('Receita Total'), TextCellValue('Despesas Totais'), TextCellValue('Renda Líquida')]);
+    sheet.appendRow([
+      TextCellValue(_formatCurrency.format(totalIncome)), 
+      TextCellValue(_formatCurrency.format(totalExpenses)), 
+      TextCellValue(_formatCurrency.format(netIncome))
+    ]);
+    sheet.appendRow([TextCellValue('')]);
+
+    // Categorias
+    sheet.appendRow([TextCellValue('DESPESAS POR CATEGORIA')]);
+    sheet.appendRow([TextCellValue('Categoria'), TextCellValue('Valor'), TextCellValue('Porcentagem')]);
+    for (var item in rawBreakdown) {
+      final cat = item['category'] as String? ?? 'Sem Categoria';
+      final val = (item['amount'] as num?)?.toDouble() ?? 0.0;
+      final pct = (item['percentage'] as num?)?.toDouble() ?? 0.0;
+      sheet.appendRow([
+        TextCellValue(cat),
+        TextCellValue(_formatCurrency.format(val)),
+        TextCellValue('${pct.toStringAsFixed(1)}%')
+      ]);
+    }
+    sheet.appendRow([TextCellValue('')]);
+
+    // Evolução
+    sheet.appendRow([TextCellValue('EVOLUÇÃO DO SALDO')]);
+    sheet.appendRow([TextCellValue('Mês'), TextCellValue('Receitas'), TextCellValue('Despesas'), TextCellValue('Saldo'), TextCellValue('Acumulado')]);
+    for (var item in evolution) {
+      final mes = item['month'] as String? ?? '';
+      final rec = (item['income'] as num?)?.toDouble() ?? 0.0;
+      final des = (item['expense'] as num?)?.toDouble() ?? 0.0;
+      final sal = (item['net'] as num?)?.toDouble() ?? 0.0;
+      final acu = (item['cumulative'] as num?)?.toDouble() ?? 0.0;
+      sheet.appendRow([
+        TextCellValue(mes),
+        TextCellValue(_formatCurrency.format(rec)),
+        TextCellValue(_formatCurrency.format(des)),
+        TextCellValue(_formatCurrency.format(sal)),
+        TextCellValue(_formatCurrency.format(acu))
+      ]);
+    }
+
+    return excel.encode()!;
   }
 
   Widget _buildFilterCard(BuildContext context) {
@@ -215,45 +469,51 @@ class _ReportsScreenState extends State<ReportsScreen> {
             const SizedBox(height: 20),
 
             // Data início, Data fim, Tipo e Botão
-            LayoutBuilder(builder: (context, constraints) {
-              final isWide = constraints.maxWidth > 900;
-              Widget startDateField = _buildDateField(
-                label: 'Data de Início',
-                value: _startDate,
-                onTap: () => _pickDate(isStart: true),
-              );
-              Widget endDateField = _buildDateField(
-                label: 'Data de Fim',
-                value: _endDate,
-                onTap: () => _pickDate(isStart: false),
-              );
-              Widget typeField = Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(left: 4, bottom: 8),
-                    child: Text('Tipo de Transação', style: theme.textTheme.titleSmall),
+            Wrap(
+              spacing: 16,
+              runSpacing: 16,
+              crossAxisAlignment: WrapCrossAlignment.end,
+              children: [
+                SizedBox(
+                  width: 200,
+                  child: _buildDateField(
+                    label: 'Data de Início',
+                    value: _startDate,
+                    onTap: () => _pickDate(isStart: true),
                   ),
-                  DropdownButtonFormField<String>(
-                    value: _transactionType,
-                    items: _transactionTypes.map((t) => DropdownMenuItem(
-                      value: t['value'],
-                      child: Text(t['label']!),
-                    )).toList(),
-                    onChanged: (val) => setState(() => _transactionType = val!),
-                    decoration: const InputDecoration(hintText: 'Selecione'),
+                ),
+                SizedBox(
+                  width: 200,
+                  child: _buildDateField(
+                    label: 'Data de Fim',
+                    value: _endDate,
+                    onTap: () => _pickDate(isStart: false),
                   ),
-                ],
-              );
-              Widget generateBtn = Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (!isWide) const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 4, bottom: 8),
-                    child: Text('', style: theme.textTheme.titleSmall),
+                ),
+                SizedBox(
+                  width: 250,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(left: 4, bottom: 8),
+                        child: Text('Tipo de Transação', style: theme.textTheme.titleSmall),
+                      ),
+                      DropdownButtonFormField<String>(
+                        value: _transactionType,
+                        items: _transactionTypes.map((t) => DropdownMenuItem(
+                          value: t['value'],
+                          child: Text(t['label']!),
+                        )).toList(),
+                        onChanged: (val) => setState(() => _transactionType = val!),
+                        decoration: const InputDecoration(hintText: 'Selecione'),
+                      ),
+                    ],
                   ),
-                  ElevatedButton.icon(
+                ),
+                SizedBox(
+                  width: 200,
+                  child: ElevatedButton.icon(
                     onPressed: _isGenerating ? null : _generateReport,
                     icon: _isGenerating
                         ? const SizedBox(
@@ -265,37 +525,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: theme.colorScheme.primary,
                       foregroundColor: theme.colorScheme.onPrimary,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding: const EdgeInsets.symmetric(vertical: 20),
                     ),
                   ),
-                ],
-              );
-
-              if (isWide) {
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(child: startDateField),
-                    const SizedBox(width: 16),
-                    Expanded(child: endDateField),
-                    const SizedBox(width: 16),
-                    Expanded(child: typeField),
-                    const SizedBox(width: 16),
-                    Expanded(child: generateBtn),
-                  ],
-                );
-              } else {
-                return Column(children: [
-                  startDateField,
-                  const SizedBox(height: 16),
-                  endDateField,
-                  const SizedBox(height: 16),
-                  typeField,
-                  const SizedBox(height: 16),
-                  generateBtn,
-                ]);
-              }
-            }),
+                ),
+              ],
+            ),
 
             const SizedBox(height: 24),
             Divider(color: theme.dividerColor),
@@ -479,11 +714,15 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     leftTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        reservedSize: 45,
+                        reservedSize: 60,
+                        interval: 1000,
                         getTitlesWidget: (value, meta) {
                           return Text(
-                            value >= 1000 ? '${(value / 1000).toStringAsFixed(1)}k' : value.toStringAsFixed(0),
-                            style: TextStyle(fontSize: 10, color: theme.colorScheme.onSurface.withOpacity(0.6)),
+                            value >= 1000 ? '${(value / 1000).toStringAsFixed(0)}k' : value.toStringAsFixed(0),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: theme.colorScheme.onSurface.withOpacity(0.6),
+                            ),
                           );
                         },
                       ),
@@ -783,8 +1022,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 16,
+              runSpacing: 16,
               children: [
                 const Text(
                   'Relatórios',

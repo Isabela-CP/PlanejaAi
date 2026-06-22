@@ -18,11 +18,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN groupadd -r appuser && useradd -r -g appuser appuser
 
 # Install python dependencies
-COPY --chown=root:root --chmod=444 requirements.txt /app/
+COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy only the files strictly required to run the application (no wildcard COPY)
-COPY --chown=root:root --chmod=555 src/ /app/src/
+COPY --chown=appuser:appuser src/ /app/src/
 
 # Switch to the non-root user
 USER appuser
