@@ -416,6 +416,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                         onPressed: () {
                                           if (_showCategoryOptions) {
                                             _categoryFocusNode.unfocus();
+                                            setState(() {
+                                              _showCategoryOptions = false;
+                                            });
                                           } else {
                                             _categoryFocusNode.requestFocus();
                                           }
@@ -475,9 +478,12 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                           child: Consumer<FinanceProvider>(
                             builder: (context, provider, _) {
                               final query = _categoryController.text.trim().toLowerCase();
-                              final filtered = provider.categories.where((cat) {
-                                return cat.name.toLowerCase().contains(query);
-                              }).toList();
+                              final exactMatch = provider.categories.any((c) => c.name.toLowerCase() == query);
+                              final filtered = exactMatch
+                                  ? provider.categories
+                                  : provider.categories.where((cat) {
+                                      return cat.name.toLowerCase().contains(query);
+                                    }).toList();
 
                               return Column(
                                 mainAxisSize: MainAxisSize.min,

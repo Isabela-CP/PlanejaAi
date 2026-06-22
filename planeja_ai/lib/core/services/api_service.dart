@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http_parser/http_parser.dart';
 
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -57,7 +58,7 @@ class ApiService {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
 
-    var request = http.MultipartRequest('POST', Uri.parse('$_baseUrl$endpoint'));
+    final request = http.MultipartRequest('POST', Uri.parse('$_baseUrl$endpoint'));
     if (token != null) {
       request.headers['Authorization'] = 'Bearer $token';
     }
@@ -67,10 +68,11 @@ class ApiService {
         fileField,
         fileBytes,
         filename: filename,
+        contentType: MediaType('application', 'octet-stream'),
       ),
     );
 
-    var streamedResponse = await request.send();
+    final streamedResponse = await request.send();
     return await http.Response.fromStream(streamedResponse);
   }
 
