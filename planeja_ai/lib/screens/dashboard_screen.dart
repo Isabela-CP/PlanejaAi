@@ -56,19 +56,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Header
-            Wrap(
-              alignment: WrapAlignment.spaceBetween,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: 16,
-              runSpacing: 16,
-              children: [
-                const Text(
-                  'Painel',
-                  style:
-                      TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-                ).animate().fade().slideX(),
-              ],
-            ),
+                Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 16,
+                  runSpacing: 16,
+                  children: [
+                    const Text(
+                      'Painel',
+                      style:
+                          TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                    ).animate().fade().slideX(),
+                  ],
+                ),
                 const SizedBox(height: 24),
 
                 // Summary Cards
@@ -283,9 +283,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (r > maxY) maxY = r;
       if (d > maxY) maxY = d;
     }
-    maxY = maxY * 1.2;
+
+    double interval = 1000;
     if (maxY > 0) {
-      double interval = maxY > 1000 ? 500 : (maxY > 100 ? 100 : 50);
+      maxY = maxY * 1.05;
+      if (maxY > 20000)
+        interval = 5000;
+      else if (maxY > 10000)
+        interval = 2000;
+      else if (maxY > 5000)
+        interval = 1000;
+      else if (maxY > 1000)
+        interval = 500;
+      else
+        interval = 100;
+
       maxY = (maxY / interval).ceil() * interval;
     }
     if (maxY == 0) maxY = 100;
@@ -349,10 +361,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               },
                             ),
                           ),
-                          leftTitles: const AxisTitles(
+                          leftTitles: AxisTitles(
                             sideTitles: SideTitles(
                               showTitles: true,
-                              reservedSize: 42,
+                              reservedSize: 60,
+                              interval: interval,
+                              getTitlesWidget: (value, meta) {
+                                return Text(
+                                  value >= 1000
+                                      ? '${(value / 1000).toStringAsFixed(0)}k'
+                                      : value.toStringAsFixed(0),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withOpacity(0.6),
+                                  ),
+                                );
+                              },
                             ),
                           ),
                           topTitles: const AxisTitles(
@@ -377,12 +404,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (s > maxY) maxY = s;
       if (s < minY) minY = s;
     }
-    maxY = maxY * 1.2;
+
+    double interval = 1000;
     if (maxY > 0) {
-      double interval = maxY > 1000 ? 500 : (maxY > 100 ? 100 : 50);
+      maxY = maxY * 1.05;
+      if (maxY > 20000)
+        interval = 5000;
+      else if (maxY > 10000)
+        interval = 2000;
+      else if (maxY > 5000)
+        interval = 1000;
+      else if (maxY > 1000)
+        interval = 500;
+      else
+        interval = 100;
+
       maxY = (maxY / interval).ceil() * interval;
     }
-    minY = minY < 0 ? minY * 1.2 : 0;
+    minY = minY < 0 ? minY * 1.05 : 0;
     if (maxY == 0) maxY = 100;
 
     final spots = evolucaoList.asMap().entries.map((entry) {
@@ -434,10 +473,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               interval: 1,
                             ),
                           ),
-                          leftTitles: const AxisTitles(
+                          leftTitles: AxisTitles(
                             sideTitles: SideTitles(
                               showTitles: true,
-                              reservedSize: 42,
+                              reservedSize: 60,
+                              interval: interval,
+                              getTitlesWidget: (value, meta) {
+                                return Text(
+                                  value >= 1000
+                                      ? '${(value / 1000).toStringAsFixed(0)}k'
+                                      : value.toStringAsFixed(0),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withOpacity(0.6),
+                                  ),
+                                );
+                              },
                             ),
                           ),
                           topTitles: const AxisTitles(

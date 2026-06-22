@@ -15,6 +15,7 @@ class GoalsScreen extends StatefulWidget {
 
 class _GoalsScreenState extends State<GoalsScreen> {
   bool _showForm = false;
+  Goal? _goalToEdit;
 
   @override
   void initState() {
@@ -28,12 +29,23 @@ class _GoalsScreenState extends State<GoalsScreen> {
   void _toggleForm() {
     setState(() {
       _showForm = !_showForm;
+      if (!_showForm) {
+        _goalToEdit = null;
+      }
+    });
+  }
+
+  void _handleEditGoal(Goal goal) {
+    setState(() {
+      _goalToEdit = goal;
+      _showForm = true;
     });
   }
 
   void _handleAddGoal(Goal newGoal) {
     setState(() {
       _showForm = false;
+      _goalToEdit = null;
     });
   }
 
@@ -62,15 +74,15 @@ class _GoalsScreenState extends State<GoalsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
-        child: CustomScrollView(
-          slivers: [
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             // Header estilo Painel/Transações
-            SliverToBoxAdapter(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -112,20 +124,22 @@ class _GoalsScreenState extends State<GoalsScreen> {
                       child: GoalForm(
                         onAddGoal: _handleAddGoal,
                         onCancel: _toggleForm,
-                      ).animate().fade(duration: 300.ms).slideY(
+                        goalToEdit: _goalToEdit,
+              ).animate().fade(duration: 300.ms).slideY(
                           begin: -0.1,
                           end: 0,
                           duration: 300.ms,
                           curve: Curves.easeOut),
                     ),
                 ],
-              ),
             ),
+
 
             Consumer<FinanceProvider>(
               builder: (context, financeProvider, child) {
                 if (financeProvider.isLoadingGoals) {
-                  return const SliverFillRemaining(
+                  return const Padding(
+                    padding: EdgeInsets.all(32.0),
                     child: Center(
                       child: CircularProgressIndicator(),
                     ),
@@ -134,8 +148,8 @@ class _GoalsScreenState extends State<GoalsScreen> {
 
                 final goals = financeProvider.goals;
                 if (goals.isEmpty) {
-                  return SliverFillRemaining(
-                    hasScrollBody: false,
+                  return Padding(
+                    padding: const EdgeInsets.all(32.0),
                     child: Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -165,43 +179,39 @@ class _GoalsScreenState extends State<GoalsScreen> {
                   );
                 }
 
-                return SliverLayoutBuilder(
-                  builder: (context, constraints) {
-                    int crossAxisCount = constraints.crossAxisExtent > 800
-                        ? 3
-                        : (constraints.crossAxisExtent > 500 ? 2 : 1);
-
-                    return SliverGrid(
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: crossAxisCount,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                        mainAxisExtent: 375,
-                      ),
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
+                return LayoutBuilder(
+                    builder: (context, constraints) {
+                      int crossAxisCount = constraints.maxWidth > 800 ? 3 : (constraints.maxWidth > 500 ? 2 : 1);
+                      
+                      return GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: crossAxisCount,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                          mainAxisExtent: 375, 
+                        ),
+                        itemCount: goals.length,
+                        itemBuilder: (context, index) {
                           return GoalCard(
                             goal: goals[index],
                             onDelete: () => _handleDeleteGoal(goals[index].id),
+                            onEdit: _handleEditGoal,
                           )
-                              .animate()
-                              .fade(duration: 400.ms, delay: (50 * index).ms)
-                              .slideY(
-                                  begin: 0.1,
-                                  end: 0,
-                                  duration: 400.ms,
-                                  curve: Curves.easeOut);
+                          .animate()
+                          .fade(duration: 400.ms, delay: (50 * index).ms)
+                          .slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut);
                         },
-                        childCount: goals.length,
-                      ),
-                    );
-                  },
+                      );
+                    },
                 );
               },
             ),
           ],
         ),
       ),
+
     );
   }
 }

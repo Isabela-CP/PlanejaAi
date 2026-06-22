@@ -714,11 +714,15 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     leftTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        reservedSize: 45,
+                        reservedSize: 60,
+                        interval: 1000,
                         getTitlesWidget: (value, meta) {
                           return Text(
-                            value >= 1000 ? '${(value / 1000).toStringAsFixed(1)}k' : value.toStringAsFixed(0),
-                            style: TextStyle(fontSize: 10, color: theme.colorScheme.onSurface.withOpacity(0.6)),
+                            value >= 1000 ? '${(value / 1000).toStringAsFixed(0)}k' : value.toStringAsFixed(0),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: theme.colorScheme.onSurface.withOpacity(0.6),
+                            ),
                           );
                         },
                       ),

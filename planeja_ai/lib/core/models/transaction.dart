@@ -48,4 +48,26 @@ class Transaction {
         'date': date.toIso8601String().split('T')[0],
         'description': description,
       };
+
+  Transaction copyWith({
+    String? id,
+    String? title,
+    String? type,
+    double? amount,
+    String? categoryName,
+    AppCategory? category,
+    DateTime? date,
+    String? description,
+  }) {
+    return Transaction(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      type: type ?? this.type,
+      amount: amount ?? this.amount,
+      categoryName: categoryName ?? this.categoryName,
+      category: category ?? this.category,
+      date: date ?? this.date,
+      description: description ?? this.description,
+    );
+  }
 }

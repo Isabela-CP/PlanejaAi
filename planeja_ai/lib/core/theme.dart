@@ -2,15 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  // Cores mais tranquilas
-  static const Color _primaryLight = Color(0xFFD4A017); // Amarelo/Ouro mais suave
-  static const Color _primaryDark = Color(0xFFF2C230); // Amarelo original
-  
-  static const Color _bgLight = Color(0xFFF5F0E6); // Bege/Cinza quente bem suave
-  static const Color _surfaceLight = Color(0xFFFFFDF9); // Off-white aconchegante
-  
-  static const Color _bgDark = Color(0xFF202124); // Cinza escuro Google
-  static const Color _surfaceDark = Color(0xFF292A2D); // Cinza um pouco mais claro para cards/menu
+  static const Color _primaryLight = Color(0xFFD4A017);
+  static const Color _primaryDark = Color(0xFFF2C230);
+
+  static const Color _bgLight = Color(0xFFF5F0E6);
+  static const Color _surfaceLight = Color(0xFFFFFDF9);
+
+  static const Color _bgDark = Color(0xFF202124);
+  static const Color _surfaceDark = Color(0xFF292A2D);
 
   static ThemeData get lightTheme {
     return ThemeData(
@@ -60,10 +59,20 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: _surfaceLight,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: _primaryLight, width: 2)),
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFF0F172A), width: 2),
+        ),
       ),
     );
   }
@@ -116,10 +125,20 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: _bgDark,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF3C4043))),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF3C4043))),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: _primaryDark, width: 2)),
+        fillColor: const Color(0xFF1E293B),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFF334155)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFF334155)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Colors.white, width: 2),
+        ),
       ),
     );
   }

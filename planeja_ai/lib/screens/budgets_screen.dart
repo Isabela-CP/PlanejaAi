@@ -15,6 +15,7 @@ class BudgetsScreen extends StatefulWidget {
 
 class _BudgetsScreenState extends State<BudgetsScreen> {
   bool _showForm = false;
+  Budget? _budgetToEdit;
 
   @override
   void initState() {
@@ -29,19 +30,38 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
   void _toggleForm() {
     setState(() {
       _showForm = !_showForm;
+      if (!_showForm) {
+        _budgetToEdit = null;
+      }
+    });
+  }
+
+  void _handleEditBudget(Budget budget) {
+    setState(() {
+      _budgetToEdit = budget;
+      _showForm = true;
     });
   }
 
   Future<void> _handleAddBudget(String categoryId, double limit, int resetDay) async {
     final provider = Provider.of<FinanceProvider>(context, listen: false);
     try {
-      await provider.addBudget(
-        categoryId: categoryId,
-        limit: limit,
-        resetDay: resetDay,
-      );
+      if (_budgetToEdit != null) {
+        await provider.updateBudget(
+          _budgetToEdit!.id,
+          limit: limit,
+          resetDay: resetDay,
+        );
+      } else {
+        await provider.addBudget(
+          categoryId: categoryId,
+          limit: limit,
+          resetDay: resetDay,
+        );
+      }
       setState(() {
         _showForm = false;
+        _budgetToEdit = null;
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -142,6 +162,7 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
             if (_showForm)
               BudgetForm(
                 currentBudgets: budgets,
+                budgetToEdit: _budgetToEdit,
                 onAddBudget: _handleAddBudget,
                 onCancel: _toggleForm,
               ).animate()
@@ -189,6 +210,7 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
                                 return BudgetCard(
                                   budget: budget,
                                   onDelete: () => _handleDeleteBudget(budget),
+                                  onEdit: _handleEditBudget,
                                 )
                                 .animate()
                                 .fade(duration: 400.ms, delay: (50 * index).ms)

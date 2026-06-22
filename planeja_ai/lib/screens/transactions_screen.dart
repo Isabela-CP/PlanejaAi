@@ -64,6 +64,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   bool _showCategoryOptions = false;
   bool _isDialogOpen = false;
   DateTime _date = DateTime.now();
+  Transaction? _transactionToEdit;
+
 
   bool _isLoading = false;
 
@@ -150,6 +152,19 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     }
   }
 
+  void _handleEditTransaction(Transaction tx) {
+    setState(() {
+      _transactionToEdit = tx;
+      _showForm = true;
+      _type = tx.type;
+      _titleController.text = tx.title;
+      _amountController.text = tx.amount.toStringAsFixed(2).replaceAll('.', ',');
+      _descriptionController.text = tx.description;
+      _categoryController.text = tx.categoryName;
+      _date = tx.date;
+    });
+  }
+
   Future<void> _deleteTransaction(String id) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -222,14 +237,30 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     );
 
     try {
-      await provider.addTransaction(newTransaction);
+      if (_transactionToEdit != null) {
+        final updatedTx = _transactionToEdit!.copyWith(
+          title: titleText,
+          type: _type,
+          amount: amount,
+          categoryName: matched.id.isNotEmpty ? matched.name : categoryText,
+          category: matched.id.isNotEmpty ? matched : null,
+          date: _date,
+          description: _descriptionController.text,
+        );
+        await provider.updateTransaction(_transactionToEdit!.id, updatedTx);
+      } else {
+        await provider.addTransaction(newTransaction);
+      }
+
       setState(() {
         _showForm = false;
+        _transactionToEdit = null;
         _titleController.clear();
         _amountController.clear();
         _descriptionController.clear();
         _categoryController.text = 'Outros';
         _showCategoryOptions = false;
+        _date = DateTime.now();
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -273,8 +304,14 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 ElevatedButton.icon(
                   onPressed: () => setState(() {
                     _showForm = !_showForm;
-                    _titleController.clear();
-                    _categoryController.text = 'Outros';
+                    if (!_showForm) {
+                      _transactionToEdit = null;
+                      _titleController.clear();
+                      _amountController.clear();
+                      _descriptionController.clear();
+                      _categoryController.text = 'Outros';
+                      _date = DateTime.now();
+                    }
                     _showCategoryOptions = false;
                   }),
                   icon: const Icon(LucideIcons.plus, size: 16),
@@ -304,9 +341,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Nova Transação',
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        Text(
+                          _transactionToEdit != null ? 'Editar Transação' : 'Nova Transação',
+                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 24),
                         TextField(
@@ -544,14 +581,18 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                             ),
                             child: _isLoading
                                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                : const Text('Adicionar Transação'),
+                                : Text(_transactionToEdit != null ? 'Salvar Alterações' : 'Adicionar Transação'),
                           ),
                           const SizedBox(width: 16),
                           OutlinedButton(
                             onPressed: () => setState(() {
                               _showForm = false;
+                              _transactionToEdit = null;
                               _titleController.clear();
+                              _amountController.clear();
+                              _descriptionController.clear();
                               _categoryController.text = 'Outros';
+                              _date = DateTime.now();
                               _showCategoryOptions = false;
                             }),
                             style: OutlinedButton.styleFrom(
@@ -566,8 +607,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                   ),
                 ),
               ),
-            ).animate().fade(duration: 300.ms).slideY(begin: -0.1, end: 0, duration: 300.ms, curve: Curves.easeOut),
-              const SizedBox(height: 24),
+            ),
+
             ],
 
             // List
@@ -612,6 +653,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                           itemCount: list.length,
                           separatorBuilder: (context, index) => const Divider(height: 1),
                           itemBuilder: (context, index) {
+                            final theme = Theme.of(context);
                             final t = list[index];
                             final isIncome = t.type == 'income';
                             final baseColor = isIncome ? const Color(0xFF10B981) : const Color(0xFFEF4444);
@@ -690,35 +732,92 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                               ),
                                             ],
                                           ),
-                                        ],
+      
+                                  ],
                                       ),
                                     ),
                                     const SizedBox(width: 8),
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.end,
-                                      children: [
-                                        Text(
-                                          '${isIncome ? '+' : '-'}${_formatCurrency.format(t.amount)}',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.bold,
-                                            color: baseColor,
+                                    MediaQuery.of(context).size.width > 600
+                                        ? Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                '${isIncome ? '+' : '-'}${_formatCurrency.format(t.amount)}',
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: baseColor,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 16),
+                                              SizedBox(
+                                                height: 28,
+                                                width: 28,
+                                                child: IconButton(
+                                                  padding: EdgeInsets.zero,
+                                                  iconSize: 16,
+                                                  icon: const Icon(LucideIcons.edit3, color: Colors.grey),
+                                                  hoverColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                                  onPressed: () => _handleEditTransaction(t),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              SizedBox(
+                                                height: 28,
+                                                width: 28,
+                                                child: IconButton(
+                                                  padding: EdgeInsets.zero,
+                                                  iconSize: 16,
+                                                  icon: const Icon(LucideIcons.trash2, color: Colors.grey),
+                                                  hoverColor: Colors.red.withOpacity(0.1),
+                                                  onPressed: () => _deleteTransaction(t.id),
+                                                ),
+                                              ),
+                                            ],
+                                          )
+                                        : Column(
+                                            crossAxisAlignment: CrossAxisAlignment.end,
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                '${isIncome ? '+' : '-'}${_formatCurrency.format(t.amount)}',
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: baseColor,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  SizedBox(
+                                                    height: 28,
+                                                    width: 28,
+                                                    child: IconButton(
+                                                      padding: EdgeInsets.zero,
+                                                      iconSize: 16,
+                                                      icon: const Icon(LucideIcons.edit3, color: Colors.grey),
+                                                      hoverColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                                      onPressed: () => _handleEditTransaction(t),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  SizedBox(
+                                                    height: 28,
+                                                    width: 28,
+                                                    child: IconButton(
+                                                      padding: EdgeInsets.zero,
+                                                      iconSize: 16,
+                                                      icon: const Icon(LucideIcons.trash2, color: Colors.grey),
+                                                      hoverColor: Colors.red.withOpacity(0.1),
+                                                      onPressed: () => _deleteTransaction(t.id),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
                                           ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        SizedBox(
-                                          height: 28,
-                                          width: 28,
-                                          child: IconButton(
-                                            padding: EdgeInsets.zero,
-                                            iconSize: 16,
-                                            icon: const Icon(LucideIcons.trash2, color: Colors.grey),
-                                            hoverColor: Colors.red.withOpacity(0.1),
-                                            onPressed: () => _deleteTransaction(t.id),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
                                   ],
                                 ),
                               ),

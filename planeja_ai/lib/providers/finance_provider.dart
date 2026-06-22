@@ -28,7 +28,7 @@ class FinanceProvider extends ChangeNotifier {
   double _balance = 0.0;
   double _income = 0.0;
   double _expenses = 0.0;
-  // Adicione isso dentro da classe FinanceProvider
+
   List<dynamic>? get reportEvolucaoSaldo => _reportBalanceEvolution;
   List<AppCategory> get transactionCategories => List.unmodifiable(_transactionCategories);
   List<AppCategory> get goalCategories => List.unmodifiable(_goalCategories);
@@ -193,12 +193,6 @@ class FinanceProvider extends ChangeNotifier {
         exp += tx.amount;
       }
     }
-    
-    // Adicionar o valor já guardado nas metas como um 'gasto/investimento' retirado do saldo
-    for (var goal in _goals) {
-      exp += goal.currentAmount;
-    }
-
     _income = inc;
     _expenses = exp;
     _balance = inc - exp;
@@ -215,10 +209,32 @@ class FinanceProvider extends ChangeNotifier {
       _recalculateBalances();
       notifyListeners();
       fetchBudgets();
-      fetchReportsData(); // Update reports after adding tx
+      fetchReportsData();
     } else {
       final data = _apiService.decode(response);
       final msg = data is Map ? (data['error'] ?? 'Erro ao criar transação') : 'Erro ao criar transação';
+      throw Exception(msg);
+    }
+  }
+
+  Future<void> updateTransaction(String id, Transaction tx) async {
+    final response = await _apiService.put(
+      '/transactions/$id',
+      body: tx.toJson(),
+    );
+    if (response.statusCode == 200) {
+      final updatedTx = Transaction.fromJson(json.decode(response.body) as Map<String, dynamic>);
+      final idx = _transactions.indexWhere((t) => t.id == id);
+      if (idx != -1) {
+        _transactions[idx] = updatedTx;
+        _recalculateBalances();
+        notifyListeners();
+        fetchBudgets();
+        fetchReportsData();
+      }
+    } else {
+      final data = json.decode(response.body);
+      final msg = data is Map ? (data['error'] ?? 'Erro ao atualizar transação') : 'Erro ao atualizar transação';
       throw Exception(msg);
     }
   }
@@ -230,7 +246,7 @@ class FinanceProvider extends ChangeNotifier {
       _recalculateBalances();
       notifyListeners();
       fetchBudgets();
-      fetchReportsData(); // Update reports after deleting tx
+      fetchReportsData();
     } else {
       final data = _apiService.decode(response);
       final msg = data is Map ? (data['error'] ?? 'Erro ao remover transação') : 'Erro ao remover transação';
@@ -370,17 +386,19 @@ class FinanceProvider extends ChangeNotifier {
   Future<void> updateGoal(
     String id, {
     String? name,
-    double? targetValue,
+    double? amount,
     double? currentValue,
     DateTime? deadline,
     String? categoryId,
+    String? customCategory,
   }) async {
     final body = {
       if (name != null) 'name': name,
-      if (targetValue != null) 'targetValue': targetValue,
+      if (amount != null) 'amount': amount,
       if (currentValue != null) 'currentValue': currentValue,
       if (deadline != null) 'deadline': deadline.toIso8601String().split('T')[0],
-      if (categoryId != null) 'categoryId': categoryId == "" ? "" : categoryId,
+      if (categoryId != null) 'categoryId': categoryId,
+      if (customCategory != null) 'customCategory': customCategory,
     };
     final response = await _apiService.put(
       '/goals/$id',
