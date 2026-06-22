@@ -107,10 +107,13 @@ class _BudgetFormState extends State<BudgetForm> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    widget.budgetToEdit != null ? 'Editar Orçamento' : 'Criar Novo Orçamento',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
+                  Expanded(
+                    child: Text(
+                      widget.budgetToEdit != null ? 'Editar Orçamento' : 'Criar Novo Orçamento',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   if (widget.budgetToEdit == null)
