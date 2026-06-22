@@ -252,42 +252,53 @@ class _ReportsScreenState extends State<ReportsScreen> {
           csv.writeln('$mes;${rec.toStringAsFixed(2)};${des.toStringAsFixed(2)};${sal.toStringAsFixed(2)};${acu.toStringAsFixed(2)}');
         }
 
+        final csvBytes = Uint8List.fromList(csv.toString().codeUnits);
         outputFile = await file_picker.FilePicker.saveFile(
           dialogTitle: 'Onde deseja salvar o relatório?',
           fileName: 'relatorio_planeja_ai.csv',
           type: file_picker.FileType.custom,
           allowedExtensions: ['csv'],
+          bytes: csvBytes,
         );
 
         if (outputFile != null) {
-          final file = dart_io.File(outputFile);
-          await file.writeAsString(csv.toString());
+          try {
+            final file = dart_io.File(outputFile);
+            await file.writeAsBytes(csvBytes);
+          } catch (_) {}
         }
       } else if (format == 'pdf') {
+        final pdfBytes = await _generatePdfBytes(summary, breakdown, evolution);
         outputFile = await file_picker.FilePicker.saveFile(
           dialogTitle: 'Onde deseja salvar o relatório PDF?',
           fileName: 'relatorio_planeja_ai.pdf',
           type: file_picker.FileType.custom,
           allowedExtensions: ['pdf'],
+          bytes: pdfBytes,
         );
 
         if (outputFile != null) {
-          final bytes = await _generatePdfBytes(summary, breakdown, evolution);
-          final file = dart_io.File(outputFile);
-          await file.writeAsBytes(bytes);
+          try {
+            final file = dart_io.File(outputFile);
+            await file.writeAsBytes(pdfBytes);
+          } catch (_) {}
         }
       } else if (format == 'excel') {
+        final excelBytesList = await _generateExcelBytes(summary, breakdown, evolution);
+        final excelBytes = Uint8List.fromList(excelBytesList);
         outputFile = await file_picker.FilePicker.saveFile(
           dialogTitle: 'Onde deseja salvar o relatório Excel?',
           fileName: 'relatorio_planeja_ai.xlsx',
           type: file_picker.FileType.custom,
           allowedExtensions: ['xlsx'],
+          bytes: excelBytes,
         );
 
         if (outputFile != null) {
-          final bytes = await _generateExcelBytes(summary, breakdown, evolution);
-          final file = dart_io.File(outputFile);
-          await file.writeAsBytes(bytes);
+          try {
+            final file = dart_io.File(outputFile);
+            await file.writeAsBytes(excelBytes);
+          } catch (_) {}
         }
       }
 
