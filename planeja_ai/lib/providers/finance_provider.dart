@@ -394,7 +394,7 @@ class FinanceProvider extends ChangeNotifier {
   }) async {
     final body = {
       if (name != null) 'name': name,
-      if (amount != null) 'amount': amount,
+      if (amount != null) 'targetValue': amount,
       if (currentValue != null) 'currentValue': currentValue,
       if (deadline != null) 'deadline': deadline.toIso8601String().split('T')[0],
       if (categoryId != null) 'categoryId': categoryId,

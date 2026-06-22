@@ -323,6 +323,9 @@ class _GoalFormState extends State<GoalForm> {
                               onPressed: () {
                                 if (_showCategoryOptions) {
                                   _categoryFocusNode.unfocus();
+                                  setState(() {
+                                    _showCategoryOptions = false;
+                                  });
                                 } else {
                                   _categoryFocusNode.requestFocus();
                                 }
@@ -388,9 +391,12 @@ class _GoalFormState extends State<GoalForm> {
                     child: Consumer<FinanceProvider>(
                       builder: (context, provider, _) {
                         final query = _categoryController.text.trim().toLowerCase();
-                        final filtered = provider.goalCategories.where((cat) {
-                          return cat.name.toLowerCase().contains(query);
-                        }).toList();
+                        final exactMatch = provider.goalCategories.any((c) => c.name.toLowerCase() == query);
+                        final filtered = exactMatch
+                            ? provider.goalCategories
+                            : provider.goalCategories.where((cat) {
+                                return cat.name.toLowerCase().contains(query);
+                              }).toList();
 
                         return Column(
                           mainAxisSize: MainAxisSize.min,

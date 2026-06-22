@@ -74,15 +74,19 @@ class Budget {
              (txDate.isBefore(end) || txDate.isAtSameMomentAs(end));
     }).toList();
 
-    // Duração total do ciclo em dias
-    final totalDays = end.difference(start).inDays + 1;
-    final totalWeeks = totalDays / 7.0;
+    // Divide o mês logicamente em 4 semanas (a última semana "engole" os dias finais)
+    final int totalWeeks = 4;
 
     // Dias transcorridos desde o início do ciclo
     final daysSinceStart = today.difference(start).inDays;
-    final currentWeekIndex = (daysSinceStart / 7).floor();
+    
+    // Determina a semana atual (0 a 3)
+    int currentWeekIndex = (daysSinceStart / 7).floor();
+    if (currentWeekIndex > 3) {
+      currentWeekIndex = 3; // A 4ª semana dura até o fim do ciclo (dia 22 em diante)
+    }
 
-    // Início da semana corrente
+    // Início exato do bloco da semana corrente
     final weekStart = start.add(Duration(days: currentWeekIndex * 7));
 
     double spentBefore = 0.0;
@@ -96,11 +100,14 @@ class Budget {
       }
     }
 
-    final weeksRemaining = totalWeeks - currentWeekIndex;
-    final remainingLimitBefore = monthlyLimit - spentBefore;
+    // Quantas semanas faltam (incluindo a atual) para ratear a sobra
+    final int weeksRemaining = totalWeeks - currentWeekIndex;
+    final double remainingLimitBefore = monthlyLimit - spentBefore;
     
-    // Limite disponível para esta semana
-    final weeklyLimit = weeksRemaining > 0 ? remainingLimitBefore / weeksRemaining : remainingLimitBefore;
+    // Limite disponível para esta semana (distribui o saldo passado nas semanas restantes)
+    final double weeklyLimit = weeksRemaining > 0 
+        ? remainingLimitBefore / weeksRemaining 
+        : remainingLimitBefore;
     
     // Saldo semanal restante (pode ser negativo se gastou a mais nesta semana)
     final weeklyRemaining = weeklyLimit - spentCurrent;
