@@ -1,0 +1,23 @@
+# Ignore Git files
+.git
+.gitignore
+
+# Ignore build and cache directories
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Ignore local environment variables and secrets
+.env
+.env.local
+.env.*
+
+# Ignore dev orchestration files
+Dockerfile
+docker-compose.yml
+Makefile
+.dockerignore

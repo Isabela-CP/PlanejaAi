@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../core/models/goal.dart';
+import '../providers/finance_provider.dart';
 
 class GoalCard extends StatelessWidget {
   final Goal goal;
   final VoidCallback onDelete;
+  final Function(Goal) onEdit;
 
-  const GoalCard({Key? key, required this.goal, required this.onDelete}) : super(key: key);
+  const GoalCard({
+    Key? key,
+    required this.goal,
+    required this.onDelete,
+    required this.onEdit,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -70,33 +78,44 @@ class GoalCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline, size: 20),
-                  color: theme.colorScheme.error,
-                  tooltip: 'Deletar',
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('Excluir Meta'),
-                        content: Text('Tem certeza que deseja excluir "${goal.name}"? Esta ação não pode ser desfeita.'),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            child: const Text('Cancelar'),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined, size: 20),
+                      color: theme.colorScheme.primary,
+                      tooltip: 'Editar',
+                      onPressed: () => onEdit(goal),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, size: 20),
+                      color: theme.colorScheme.error,
+                      tooltip: 'Deletar',
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Excluir Meta'),
+                            content: Text('Tem certeza que deseja excluir "${goal.name}"? Esta ação não pode ser desfeita.'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.of(context).pop(),
+                                child: const Text('Cancelar'),
+                              ),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(backgroundColor: theme.colorScheme.error),
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                  onDelete();
+                                },
+                                child: const Text('Excluir'),
+                              ),
+                            ],
                           ),
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(backgroundColor: theme.colorScheme.error),
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                              onDelete();
-                            },
-                            child: const Text('Excluir'),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -172,23 +191,158 @@ class GoalCard extends StatelessWidget {
             Divider(color: theme.dividerColor),
             const SizedBox(height: 12),
             
+            Builder(
+              builder: (context) {
+                final isOver = goal.currentAmount > goal.amount;
+                final remainingVal = isOver ? (goal.currentAmount - goal.amount) : goal.remainingAmount;
+                final label = isOver ? 'Excedente' : 'Faltam';
+                final displayColor = isOver ? Colors.green : theme.colorScheme.primary;
+
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(label, style: TextStyle(fontSize: 12, color: mutedColor)),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        currencyFormatter.format(remainingVal),
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: displayColor),
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.right,
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: 12),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Faltam', style: TextStyle(fontSize: 12, color: mutedColor)),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    currencyFormatter.format(goal.remainingAmount),
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.right,
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _showManageMoneyDialog(context),
+                    icon: const Icon(Icons.add_card, size: 14),
+                    label: const Text('Lançar Valor', style: TextStyle(fontSize: 12)),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+                      foregroundColor: theme.colorScheme.primary,
+                      elevation: 0,
+                    ),
                   ),
                 ),
               ],
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showManageMoneyDialog(BuildContext context) {
+    final controller = TextEditingController();
+    final theme = Theme.of(context);
+    
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Lançar Valor na Meta\n"${goal.name}"', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Saldo atual: R\$ ${goal.currentAmount.toStringAsFixed(2)}', style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6))),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'Valor (R\$)',
+                hintText: '0.00',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.colorScheme.secondary,
+              foregroundColor: theme.colorScheme.onSecondary,
+            ),
+            onPressed: () async {
+              final text = controller.text.replaceAll(',', '.');
+              final val = double.tryParse(text) ?? 0.0;
+              if (val <= 0) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Por favor, insira um valor válido maior que zero.'), backgroundColor: Colors.red),
+                );
+                return;
+              }
+              if (val > goal.currentAmount) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Valor de resgate excede o saldo atual da meta.'), backgroundColor: Colors.red),
+                );
+                return;
+              }
+              Navigator.pop(ctx);
+              try {
+                final newAmount = goal.currentAmount - val;
+                await Provider.of<FinanceProvider>(context, listen: false).updateGoal(
+                  goal.id,
+                  currentValue: newAmount,
+                );
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Resgatado R\$ ${val.toStringAsFixed(2)} da meta "${goal.name}"!'), backgroundColor: Colors.green),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Erro: ${e.toString().replaceFirst('Exception: ', '')}'), backgroundColor: Colors.red),
+                  );
+                }
+              }
+            },
+            child: const Text('Resgatar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final text = controller.text.replaceAll(',', '.');
+              final val = double.tryParse(text) ?? 0.0;
+              if (val <= 0) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Por favor, insira um valor válido maior que zero.'), backgroundColor: Colors.red),
+                );
+                return;
+              }
+              Navigator.pop(ctx);
+              try {
+                final newAmount = goal.currentAmount + val;
+                await Provider.of<FinanceProvider>(context, listen: false).updateGoal(
+                  goal.id,
+                  currentValue: newAmount,
+                );
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Guardado R\$ ${val.toStringAsFixed(2)} na meta "${goal.name}"!'), backgroundColor: Colors.green),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Erro: ${e.toString().replaceFirst('Exception: ', '')}'), backgroundColor: Colors.red),
+                  );
+                }
+              }
+            },
+            child: const Text('Guardar'),
+          ),
+        ],
       ),
     );
   }

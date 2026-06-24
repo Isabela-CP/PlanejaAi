@@ -2,43 +2,59 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
+  static const Color _primaryLight = Color(0xFFD4A017);
+  static const Color _primaryDark = Color(0xFFF2C230);
+
+  static const Color _bgLight = Color(0xFFF5F0E6);
+  static const Color _surfaceLight = Color(0xFFFFFDF9);
+
+  static const Color _bgDark = Color(0xFF202124);
+  static const Color _surfaceDark = Color(0xFF292A2D);
+
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xFF0F172A),
-        brightness: Brightness.light,
-        primary: const Color(0xFF0F172A),
-        onPrimary: Colors.white,
-        secondary: const Color(0xFF334155),
-        surface: Colors.white,
-        background: const Color(0xFFF8FAFC),
-        error: const Color(0xFFEF4444),
+      colorScheme: const ColorScheme.light(
+        primary: _primaryLight,
+        secondary: Color(0xFFF2E085),
+        tertiary: Color(0xFF8C3807),
+        surface: _surfaceLight,
+        background: _bgLight,
+        error: Color(0xFFEF4444),
       ),
-      textTheme: GoogleFonts.interTextTheme(ThemeData.light().textTheme),
-      scaffoldBackgroundColor: const Color(0xFFF8FAFC),
+      textTheme: GoogleFonts.interTextTheme(ThemeData.light().textTheme).apply(
+        bodyColor: const Color(0xFF333333),
+        displayColor: const Color(0xFF1A1A1A),
+      ),
+      scaffoldBackgroundColor: _bgLight,
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        centerTitle: false,
-        iconTheme: IconThemeData(color: Color(0xFF0F172A)),
-        titleTextStyle: TextStyle(
-          color: Color(0xFF0F172A),
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-        ),
+        iconTheme: IconThemeData(color: Color(0xFF333333)),
+        titleTextStyle: TextStyle(color: Color(0xFF1A1A1A), fontSize: 20, fontWeight: FontWeight.bold),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           elevation: 0,
-          backgroundColor: const Color(0xFF0F172A),
+          backgroundColor: _primaryLight,
           foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          textStyle: const TextStyle(fontWeight: FontWeight.w500),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: const Color(0xFF333333),
+        ),
+      ),
+      cardTheme: const CardThemeData(
+        color: _surfaceLight,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(12)),
+          side: BorderSide(color: Color(0xFFE5E7EB), width: 1),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -65,39 +81,46 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xFF0F172A),
-        brightness: Brightness.dark,
-        primary: Colors.white,
-        onPrimary: const Color(0xFF0F172A),
-        secondary: const Color(0xFF94A3B8),
-        surface: const Color(0xFF1E293B),
-        background: const Color(0xFF0F172A),
-        error: const Color(0xFFEF4444),
+      colorScheme: const ColorScheme.dark(
+        primary: _primaryDark,
+        secondary: Color(0xFFF2E085),
+        tertiary: Color(0xFF8C3807),
+        surface: _surfaceDark,
+        background: _bgDark,
+        error: Color(0xFFCF6679),
       ),
-      textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
-      scaffoldBackgroundColor: const Color(0xFF0F172A),
+      textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme).apply(
+        bodyColor: const Color(0xFFE8EAED),
+        displayColor: Colors.white,
+      ),
+      scaffoldBackgroundColor: _bgDark,
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        centerTitle: false,
-        iconTheme: IconThemeData(color: Colors.white),
-        titleTextStyle: TextStyle(
-          color: Colors.white,
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-        ),
+        iconTheme: IconThemeData(color: Color(0xFFE8EAED)),
+        titleTextStyle: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           elevation: 0,
-          backgroundColor: Colors.white,
-          foregroundColor: const Color(0xFF0F172A),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          textStyle: const TextStyle(fontWeight: FontWeight.w500),
+          backgroundColor: _primaryDark,
+          foregroundColor: const Color(0xFF1A1A1A),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: _primaryDark,
+        ),
+      ),
+      cardTheme: const CardThemeData(
+        color: _surfaceDark,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(12)),
+          side: BorderSide(color: Color(0xFF3C4043), width: 1),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
