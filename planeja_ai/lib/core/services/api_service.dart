@@ -11,7 +11,9 @@ class ApiService {
   String get _baseUrl {
     String url = dotenv.env['API_BASE_URL'] ?? 'http://localhost:8000/api';
     if (!kIsWeb && Platform.isAndroid) {
-      url = url.replaceAll('localhost', '10.0.2.2').replaceAll('127.0.0.1', '10.0.2.2');
+      url = url
+          .replaceAll('localhost', '10.0.2.2')
+          .replaceAll('127.0.0.1', '10.0.2.2');
     }
     return url;
   }
@@ -19,7 +21,7 @@ class ApiService {
   Future<Map<String, String>> _getHeaders() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
-    
+
     return {
       'Content-Type': 'application/json',
       if (token != null) 'Authorization': 'Bearer $token',
@@ -31,7 +33,8 @@ class ApiService {
     return await http.get(Uri.parse('$_baseUrl$endpoint'), headers: headers);
   }
 
-  Future<http.Response> post(String endpoint, {Map<String, dynamic>? body}) async {
+  Future<http.Response> post(String endpoint,
+      {Map<String, dynamic>? body}) async {
     final headers = await _getHeaders();
     return await http.post(
       Uri.parse('$_baseUrl$endpoint'),
@@ -40,7 +43,8 @@ class ApiService {
     );
   }
 
-  Future<http.Response> put(String endpoint, {Map<String, dynamic>? body}) async {
+  Future<http.Response> put(String endpoint,
+      {Map<String, dynamic>? body}) async {
     final headers = await _getHeaders();
     return await http.put(
       Uri.parse('$_baseUrl$endpoint'),
@@ -54,11 +58,13 @@ class ApiService {
     return await http.delete(Uri.parse('$_baseUrl$endpoint'), headers: headers);
   }
 
-  Future<http.Response> multipartPost(String endpoint, String fileField, List<int> fileBytes, String filename) async {
+  Future<http.Response> multipartPost(String endpoint, String fileField,
+      List<int> fileBytes, String filename) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
 
-    final request = http.MultipartRequest('POST', Uri.parse('$_baseUrl$endpoint'));
+    final request =
+        http.MultipartRequest('POST', Uri.parse('$_baseUrl$endpoint'));
     if (token != null) {
       request.headers['Authorization'] = 'Bearer $token';
     }

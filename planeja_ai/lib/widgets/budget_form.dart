@@ -33,7 +33,9 @@ class _BudgetFormState extends State<BudgetForm> {
     super.initState();
     if (widget.budgetToEdit != null) {
       _selectedCategoryId = widget.budgetToEdit!.categoryId;
-      _limitController.text = widget.budgetToEdit!.monthlyLimit.toStringAsFixed(2).replaceAll('.', ',');
+      _limitController.text = widget.budgetToEdit!.monthlyLimit
+          .toStringAsFixed(2)
+          .replaceAll('.', ',');
       _resetDay = widget.budgetToEdit!.resetDay;
     }
   }
@@ -84,10 +86,12 @@ class _BudgetFormState extends State<BudgetForm> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final financeProvider = Provider.of<FinanceProvider>(context);
-    
-    final availableCategories = financeProvider.transactionCategories.where((cat) {
-      return !widget.currentBudgets.any((b) => b.categoryId == cat.id) || 
-             (widget.budgetToEdit != null && widget.budgetToEdit!.categoryId == cat.id);
+
+    final availableCategories =
+        financeProvider.transactionCategories.where((cat) {
+      return !widget.currentBudgets.any((b) => b.categoryId == cat.id) ||
+          (widget.budgetToEdit != null &&
+              widget.budgetToEdit!.categoryId == cat.id);
     }).toList();
 
     return Card(
@@ -109,7 +113,9 @@ class _BudgetFormState extends State<BudgetForm> {
                 children: [
                   Expanded(
                     child: Text(
-                      widget.budgetToEdit != null ? 'Editar Orçamento' : 'Criar Novo Orçamento',
+                      widget.budgetToEdit != null
+                          ? 'Editar Orçamento'
+                          : 'Criar Novo Orçamento',
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -120,7 +126,9 @@ class _BudgetFormState extends State<BudgetForm> {
                     TextButton.icon(
                       onPressed: () => _showNewCategoryDialog(context),
                       icon: const Icon(Icons.add_circle_outline, size: 16),
-                      label: const Text('Nova Categoria', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      label: const Text('Nova Categoria',
+                          style: TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.bold)),
                       style: TextButton.styleFrom(
                         padding: EdgeInsets.zero,
                         minimumSize: Size.zero,
@@ -130,14 +138,14 @@ class _BudgetFormState extends State<BudgetForm> {
                 ],
               ),
               const SizedBox(height: 24),
-              
               if (availableCategories.isEmpty && widget.budgetToEdit == null)
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: theme.colorScheme.error.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: theme.colorScheme.error.withOpacity(0.3)),
+                    border: Border.all(
+                        color: theme.colorScheme.error.withOpacity(0.3)),
                   ),
                   child: Row(
                     children: [
@@ -189,11 +197,13 @@ class _BudgetFormState extends State<BudgetForm> {
                               ),
                             );
                           }).toList(),
-                          onChanged: widget.budgetToEdit != null ? null : (val) {
-                            setState(() {
-                              _selectedCategoryId = val;
-                            });
-                          },
+                          onChanged: widget.budgetToEdit != null
+                              ? null
+                              : (val) {
+                                  setState(() {
+                                    _selectedCategoryId = val;
+                                  });
+                                },
                           validator: (value) {
                             if (value == null) {
                               return 'Por favor, selecione uma categoria';
@@ -248,7 +258,8 @@ class _BudgetFormState extends State<BudgetForm> {
                         ),
                         DropdownButtonFormField<int>(
                           value: _resetDay,
-                          items: List.generate(31, (index) => index + 1).map((day) {
+                          items: List.generate(31, (index) => index + 1)
+                              .map((day) {
                             return DropdownMenuItem<int>(
                               value: day,
                               child: Text('Dia $day'),
@@ -307,7 +318,9 @@ class _BudgetFormState extends State<BudgetForm> {
                     flex: 1,
                     child: ElevatedButton(
                       onPressed: _submitForm,
-                      child: Text(widget.budgetToEdit != null ? 'Salvar Alterações' : 'Criar Orçamento'),
+                      child: Text(widget.budgetToEdit != null
+                          ? 'Salvar Alterações'
+                          : 'Criar Orçamento'),
                     ),
                   ),
                   const SizedBox(width: 12),

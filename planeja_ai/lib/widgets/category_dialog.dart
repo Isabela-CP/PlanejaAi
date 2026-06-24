@@ -6,9 +6,18 @@ import '../core/models/category.dart';
 import '../providers/finance_provider.dart';
 
 const _kColorPalette = <Color>[
-  Color(0xFFEF4444), Color(0xFFF97316), Color(0xFFF59E0B), Color(0xFF10B981),
-  Color(0xFF06B6D4), Color(0xFF3B82F6), Color(0xFF8B5CF6), Color(0xFFEC4899),
-  Color(0xFF6B7280), Color(0xFF14B8A6), Color(0xFF84CC16), Color(0xFFFF5733),
+  Color(0xFFEF4444),
+  Color(0xFFF97316),
+  Color(0xFFF59E0B),
+  Color(0xFF10B981),
+  Color(0xFF06B6D4),
+  Color(0xFF3B82F6),
+  Color(0xFF8B5CF6),
+  Color(0xFFEC4899),
+  Color(0xFF6B7280),
+  Color(0xFF14B8A6),
+  Color(0xFF84CC16),
+  Color(0xFFFF5733),
 ];
 
 const _kIcons = <String, IconData>{
@@ -84,7 +93,8 @@ class _CategoryDialogState extends State<CategoryDialog> {
   }
 
   String _colorToHex(Color color) {
-    return '#${color.red.toRadixString(16).padLeft(2, '0')}${color.green.toRadixString(16).padLeft(2, '0')}${color.blue.toRadixString(16).padLeft(2, '0')}'.toUpperCase();
+    return '#${color.red.toRadixString(16).padLeft(2, '0')}${color.green.toRadixString(16).padLeft(2, '0')}${color.blue.toRadixString(16).padLeft(2, '0')}'
+        .toUpperCase();
   }
 
   Future<void> _submit() async {
@@ -114,7 +124,9 @@ class _CategoryDialogState extends State<CategoryDialog> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', '')), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text(e.toString().replaceFirst('Exception: ', '')),
+              backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -138,7 +150,8 @@ class _CategoryDialogState extends State<CategoryDialog> {
             children: [
               TextField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Nome da categoria'),
+                decoration:
+                    const InputDecoration(labelText: 'Nome da categoria'),
                 textCapitalization: TextCapitalization.sentences,
               ),
               const SizedBox(height: 20),
@@ -161,15 +174,21 @@ class _CategoryDialogState extends State<CategoryDialog> {
                         color: c,
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: isSelected ? theme.colorScheme.primary : Colors.transparent,
+                          color: isSelected
+                              ? theme.colorScheme.primary
+                              : Colors.transparent,
                           width: 3,
                         ),
                         boxShadow: isSelected
-                            ? [BoxShadow(color: c.withOpacity(0.5), blurRadius: 6)]
+                            ? [
+                                BoxShadow(
+                                    color: c.withOpacity(0.5), blurRadius: 6)
+                              ]
                             : null,
                       ),
                       child: isSelected
-                          ? const Icon(Icons.check, color: Colors.white, size: 16)
+                          ? const Icon(Icons.check,
+                              color: Colors.white, size: 16)
                           : null,
                     ),
                   );
@@ -195,16 +214,21 @@ class _CategoryDialogState extends State<CategoryDialog> {
                         decoration: BoxDecoration(
                           color: isSelected
                               ? _selectedColor.withOpacity(0.15)
-                              : theme.colorScheme.surfaceVariant.withOpacity(0.5),
+                              : theme.colorScheme.surfaceVariant
+                                  .withOpacity(0.5),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: isSelected ? _selectedColor : Colors.transparent,
+                            color: isSelected
+                                ? _selectedColor
+                                : Colors.transparent,
                             width: 2,
                           ),
                         ),
                         child: Icon(
                           entry.value,
-                          color: isSelected ? _selectedColor : theme.colorScheme.onSurface.withOpacity(0.6),
+                          color: isSelected
+                              ? _selectedColor
+                              : theme.colorScheme.onSurface.withOpacity(0.6),
                           size: 20,
                         ),
                       ),
@@ -221,20 +245,27 @@ class _CategoryDialogState extends State<CategoryDialog> {
                     Text('Prévia', style: theme.textTheme.labelSmall),
                     const SizedBox(height: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 10),
                       decoration: BoxDecoration(
                         color: _selectedColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: _selectedColor.withOpacity(0.4)),
+                        border:
+                            Border.all(color: _selectedColor.withOpacity(0.4)),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(_kIcons[_selectedIcon] ?? LucideIcons.helpCircle, color: _selectedColor, size: 18),
+                          Icon(_kIcons[_selectedIcon] ?? LucideIcons.helpCircle,
+                              color: _selectedColor, size: 18),
                           const SizedBox(width: 8),
                           Text(
-                            _nameController.text.isEmpty ? 'Minha Categoria' : _nameController.text,
-                            style: TextStyle(color: _selectedColor, fontWeight: FontWeight.w600),
+                            _nameController.text.isEmpty
+                                ? 'Minha Categoria'
+                                : _nameController.text,
+                            style: TextStyle(
+                                color: _selectedColor,
+                                fontWeight: FontWeight.w600),
                           ),
                         ],
                       ),
@@ -254,7 +285,10 @@ class _CategoryDialogState extends State<CategoryDialog> {
         ElevatedButton(
           onPressed: _isLoading ? null : _submit,
           child: _isLoading
-              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2))
               : Text(isEditing ? 'Salvar' : 'Salvar Categoria'),
         ),
       ],

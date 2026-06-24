@@ -43,7 +43,8 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
     });
   }
 
-  Future<void> _handleAddBudget(String categoryId, double limit, int resetDay) async {
+  Future<void> _handleAddBudget(
+      String categoryId, double limit, int resetDay) async {
     final provider = Provider.of<FinanceProvider>(context, listen: false);
     try {
       if (_budgetToEdit != null) {
@@ -84,7 +85,8 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Remover Orçamento'),
-        content: Text('Tem certeza que deseja remover o orçamento da categoria "${budget.category}"?'),
+        content: Text(
+            'Tem certeza que deseja remover o orçamento da categoria "${budget.category}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -92,7 +94,8 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
+            style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.error),
             child: const Text('Remover'),
           ),
         ],
@@ -140,10 +143,15 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
                   child: Text(
                     'Orçamentos',
                     style: TextStyle(
-                      fontSize: MediaQuery.of(context).size.width < 600 ? 24 : 32,
+                      fontSize:
+                          MediaQuery.of(context).size.width < 600 ? 24 : 32,
                       fontWeight: FontWeight.bold,
                     ),
-                  ).animate().fade(duration: 300.ms).slideX(begin: -0.1, end: 0, duration: 300.ms, curve: Curves.easeOut),
+                  ).animate().fade(duration: 300.ms).slideX(
+                      begin: -0.1,
+                      end: 0,
+                      duration: 300.ms,
+                      curve: Curves.easeOut),
                 ),
                 const SizedBox(width: 12),
                 ElevatedButton.icon(
@@ -165,9 +173,8 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
                 budgetToEdit: _budgetToEdit,
                 onAddBudget: _handleAddBudget,
                 onCancel: _toggleForm,
-              ).animate()
-               .fade(duration: 300.ms)
-               .slideY(begin: -0.1, end: 0, duration: 300.ms, curve: Curves.easeOut),
+              ).animate().fade(duration: 300.ms).slideY(
+                  begin: -0.1, end: 0, duration: 300.ms, curve: Curves.easeOut),
 
             Expanded(
               child: isLoading
@@ -182,27 +189,38 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
                               Icon(
                                 Icons.account_balance_wallet_outlined,
                                 size: 64,
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withOpacity(0.4),
                               ),
                               const SizedBox(height: 16),
                               Text(
                                 'Nenhum orçamento configurado ainda.\nCrie um para começar a planejar!',
                                 textAlign: TextAlign.center,
-                                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+                                style: TextStyle(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withOpacity(0.6)),
                               ),
                             ],
-                          ).animate().fade(duration: 400.ms).scale(begin: const Offset(0.9, 0.9)),
+                          )
+                              .animate()
+                              .fade(duration: 400.ms)
+                              .scale(begin: const Offset(0.9, 0.9)),
                         )
                       : LayoutBuilder(
                           builder: (context, constraints) {
                             bool useTwoColumns = constraints.maxWidth >= 600;
-                            
+
                             return GridView.builder(
-                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: useTwoColumns ? 2 : 1,
                                 crossAxisSpacing: 16,
                                 mainAxisSpacing: 16,
-                                mainAxisExtent: 260, 
+                                mainAxisExtent: 260,
                               ),
                               itemCount: budgets.length,
                               itemBuilder: (context, index) {
@@ -212,9 +230,15 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
                                   onDelete: () => _handleDeleteBudget(budget),
                                   onEdit: _handleEditBudget,
                                 )
-                                .animate()
-                                .fade(duration: 400.ms, delay: (50 * index).ms)
-                                .slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut);
+                                    .animate()
+                                    .fade(
+                                        duration: 400.ms,
+                                        delay: (50 * index).ms)
+                                    .slideY(
+                                        begin: 0.1,
+                                        end: 0,
+                                        duration: 400.ms,
+                                        curve: Curves.easeOut);
                               },
                             );
                           },

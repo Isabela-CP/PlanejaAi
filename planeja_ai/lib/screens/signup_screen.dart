@@ -22,7 +22,9 @@ class _SignupScreenState extends State<SignupScreen> {
   String? _error;
 
   void _handleSignup() async {
-    if (_nameController.text.isEmpty || _emailController.text.isEmpty || _passwordController.text.isEmpty) {
+    if (_nameController.text.isEmpty ||
+        _emailController.text.isEmpty ||
+        _passwordController.text.isEmpty) {
       setState(() => _error = 'Todos os campos são obrigatórios');
       return;
     }
@@ -76,20 +78,25 @@ class _SignupScreenState extends State<SignupScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Logo(size: 100, showText: false).animate().fade().scale(),
+                    const Logo(size: 100, showText: false)
+                        .animate()
+                        .fade()
+                        .scale(),
                     const SizedBox(height: 24),
                     Text(
                       'Crie sua conta',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                      style:
+                          Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
                       textAlign: TextAlign.center,
                     ).animate().fade(delay: 100.ms).slideY(),
                     const SizedBox(height: 8),
                     Text(
                       'Comece a organizar suas finanças',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                     ).animate().fade(delay: 200.ms),
                     const SizedBox(height: 32),
@@ -98,10 +105,16 @@ class _SignupScreenState extends State<SignupScreen> {
                         padding: const EdgeInsets.all(12),
                         margin: const EdgeInsets.only(bottom: 16),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.error.withOpacity(0.1),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .error
+                              .withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: Theme.of(context).colorScheme.error.withOpacity(0.5),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .error
+                                .withOpacity(0.5),
                           ),
                         ),
                         child: Row(
@@ -149,7 +162,9 @@ class _SignupScreenState extends State<SignupScreen> {
                         prefixIcon: const Icon(LucideIcons.lock, size: 20),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _showPassword ? LucideIcons.eyeOff : LucideIcons.eye,
+                            _showPassword
+                                ? LucideIcons.eyeOff
+                                : LucideIcons.eye,
                             size: 20,
                           ),
                           onPressed: () {
