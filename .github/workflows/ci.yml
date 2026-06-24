@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./backend
+        working-directory: ./planeja_ai/backend
 
     steps:
       - name: Checkout repository
@@ -51,6 +51,9 @@ jobs:
   frontend:
     name: Frontend (Flutter)
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./planeja_ai
 
     steps:
       - name: Checkout repository
