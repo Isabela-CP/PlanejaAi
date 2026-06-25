@@ -21,16 +21,19 @@ void main() async {
     debugPrint("Aviso: Falha ao carregar arquivo .env");
   }
 
-  if (!kIsWeb && (defaultTargetPlatform == TargetPlatform.windows || defaultTargetPlatform == TargetPlatform.linux || defaultTargetPlatform == TargetPlatform.macOS)) {
+  if (!kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.windows ||
+          defaultTargetPlatform == TargetPlatform.linux ||
+          defaultTargetPlatform == TargetPlatform.macOS)) {
     await windowManager.ensureInitialized();
 
     WindowOptions windowOptions = const WindowOptions(
       minimumSize: Size(600, 700),
-      size: Size(1280, 720),     
-      center: true,        
+      size: Size(1280, 720),
+      center: true,
       title: 'Planeja Aí',
     );
-    
+
     windowManager.waitUntilReadyToShow(windowOptions, () async {
       await windowManager.show();
       await windowManager.focus();

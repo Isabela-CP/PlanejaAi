@@ -83,57 +83,53 @@ class _GoalsScreenState extends State<GoalsScreen> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Metas Financeiras',
-                          style: TextStyle(
-                            fontSize: MediaQuery.of(context).size.width < 600
-                                ? 24
-                                : 32,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ).animate().fade(duration: 300.ms).slideX(
-                            begin: -0.1,
-                            end: 0,
-                            duration: 300.ms,
-                            curve: Curves.easeOut),
-                      ),
-                      const SizedBox(width: 12),
-                      ElevatedButton.icon(
-                        onPressed: _toggleForm,
-                        icon:
-                            Icon(_showForm ? Icons.close : Icons.add, size: 16),
-                        label: Text(_showForm ? 'Fechar' : 'Adicionar'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              Theme.of(context).colorScheme.primary,
-                          foregroundColor:
-                              Theme.of(context).colorScheme.onPrimary,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Metas Financeiras',
+                        style: TextStyle(
+                          fontSize:
+                              MediaQuery.of(context).size.width < 600 ? 24 : 32,
+                          fontWeight: FontWeight.bold,
                         ),
-                      ).animate().fade().scale(),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  if (_showForm)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 24),
-                      child: GoalForm(
-                        onAddGoal: _handleAddGoal,
-                        onCancel: _toggleForm,
-                        goalToEdit: _goalToEdit,
-              ).animate().fade(duration: 300.ms).slideY(
+                      ).animate().fade(duration: 300.ms).slideX(
                           begin: -0.1,
                           end: 0,
                           duration: 300.ms,
                           curve: Curves.easeOut),
                     ),
-                ],
+                    const SizedBox(width: 12),
+                    ElevatedButton.icon(
+                      onPressed: _toggleForm,
+                      icon: Icon(_showForm ? Icons.close : Icons.add, size: 16),
+                      label: Text(_showForm ? 'Fechar' : 'Adicionar'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor:
+                            Theme.of(context).colorScheme.onPrimary,
+                      ),
+                    ).animate().fade().scale(),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                if (_showForm)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 24),
+                    child: GoalForm(
+                      onAddGoal: _handleAddGoal,
+                      onCancel: _toggleForm,
+                      goalToEdit: _goalToEdit,
+                    ).animate().fade(duration: 300.ms).slideY(
+                        begin: -0.1,
+                        end: 0,
+                        duration: 300.ms,
+                        curve: Curves.easeOut),
+                  ),
+              ],
             ),
-
 
             Consumer<FinanceProvider>(
               builder: (context, financeProvider, child) {
@@ -180,38 +176,43 @@ class _GoalsScreenState extends State<GoalsScreen> {
                 }
 
                 return LayoutBuilder(
-                    builder: (context, constraints) {
-                      int crossAxisCount = constraints.maxWidth > 800 ? 3 : (constraints.maxWidth > 500 ? 2 : 1);
-                      
-                      return GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: crossAxisCount,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                          mainAxisExtent: 375, 
-                        ),
-                        itemCount: goals.length,
-                        itemBuilder: (context, index) {
-                          return GoalCard(
-                            goal: goals[index],
-                            onDelete: () => _handleDeleteGoal(goals[index].id),
-                            onEdit: _handleEditGoal,
-                          )
-                          .animate()
-                          .fade(duration: 400.ms, delay: (50 * index).ms)
-                          .slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut);
-                        },
-                      );
-                    },
+                  builder: (context, constraints) {
+                    int crossAxisCount = constraints.maxWidth > 800
+                        ? 3
+                        : (constraints.maxWidth > 500 ? 2 : 1);
+
+                    return GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossAxisCount,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                        mainAxisExtent: 375,
+                      ),
+                      itemCount: goals.length,
+                      itemBuilder: (context, index) {
+                        return GoalCard(
+                          goal: goals[index],
+                          onDelete: () => _handleDeleteGoal(goals[index].id),
+                          onEdit: _handleEditGoal,
+                        )
+                            .animate()
+                            .fade(duration: 400.ms, delay: (50 * index).ms)
+                            .slideY(
+                                begin: 0.1,
+                                end: 0,
+                                duration: 400.ms,
+                                curve: Curves.easeOut);
+                      },
+                    );
+                  },
                 );
               },
             ),
           ],
         ),
       ),
-
     );
   }
 }

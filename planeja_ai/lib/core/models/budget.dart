@@ -44,7 +44,8 @@ class Budget {
     final start = cycleStartDate;
     int nextMonth = start.month == 12 ? 1 : start.month + 1;
     int nextYear = start.month == 12 ? start.year + 1 : start.year;
-    return DateTime(nextYear, nextMonth, resetDay).subtract(const Duration(seconds: 1));
+    return DateTime(nextYear, nextMonth, resetDay)
+        .subtract(const Duration(seconds: 1));
   }
 
   int get daysLeftInPeriod {
@@ -68,10 +69,10 @@ class Budget {
     final categoryTxs = allTransactions.where((tx) {
       if (tx.category?.id != categoryId) return false;
       if (tx.type != 'expense') return false;
-      
+
       final txDate = tx.date;
       return (txDate.isAfter(start) || txDate.isAtSameMomentAs(start)) &&
-             (txDate.isBefore(end) || txDate.isAtSameMomentAs(end));
+          (txDate.isBefore(end) || txDate.isAtSameMomentAs(end));
     }).toList();
 
     // Divide o mês logicamente em 4 semanas (a última semana "engole" os dias finais)
@@ -79,11 +80,12 @@ class Budget {
 
     // Dias transcorridos desde o início do ciclo
     final daysSinceStart = today.difference(start).inDays;
-    
+
     // Determina a semana atual (0 a 3)
     int currentWeekIndex = (daysSinceStart / 7).floor();
     if (currentWeekIndex > 3) {
-      currentWeekIndex = 3; // A 4ª semana dura até o fim do ciclo (dia 22 em diante)
+      currentWeekIndex =
+          3; // A 4ª semana dura até o fim do ciclo (dia 22 em diante)
     }
 
     // Início exato do bloco da semana corrente
@@ -103,12 +105,12 @@ class Budget {
     // Quantas semanas faltam (incluindo a atual) para ratear a sobra
     final int weeksRemaining = totalWeeks - currentWeekIndex;
     final double remainingLimitBefore = monthlyLimit - spentBefore;
-    
+
     // Limite disponível para esta semana (distribui o saldo passado nas semanas restantes)
-    final double weeklyLimit = weeksRemaining > 0 
-        ? remainingLimitBefore / weeksRemaining 
+    final double weeklyLimit = weeksRemaining > 0
+        ? remainingLimitBefore / weeksRemaining
         : remainingLimitBefore;
-    
+
     // Saldo semanal restante (pode ser negativo se gastou a mais nesta semana)
     final weeklyRemaining = weeklyLimit - spentCurrent;
 
