@@ -347,5 +347,4 @@ void main() {
       expect(find.text('Planeja.AI'), findsNothing);
     });
   });
-
 }
