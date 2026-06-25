@@ -15,6 +15,21 @@ on:
       - 'feature/*'
 
 jobs:
+  check-branch-rules:
+    name: Validar Origem do Pull Request para Main
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    steps:
+      - name: Validar branch de origem
+        run: |
+          echo "Branch destino (base): ${{ github.base_ref }}"
+          echo "Branch origem (head): ${{ github.head_ref }}"
+          if [ "${{ github.head_ref }}" != "develop" ]; then
+            echo "ERRO: Pull Requests direcionados à 'main' devem obrigatoriamente ter origem na branch 'develop'."
+            exit 1
+          fi
+          echo "Sucesso: PR originado de 'develop'."
+
   backend:
     name: Backend (Python)
     runs-on: ubuntu-latest
