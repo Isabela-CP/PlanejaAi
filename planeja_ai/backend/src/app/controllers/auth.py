@@ -1,143 +1,184 @@
-from flask import Blueprint, request, jsonify, send_from_directory
-from functools import wraps
 import os
 import uuid
+from functools import wraps
+
+from flask import Blueprint, jsonify, request, send_from_directory
 from werkzeug.utils import secure_filename
+
 from src.app.models.user import User
-from src.app.utils.security import hash_password, verify_password, generate_token, decode_token
+from src.app.utils.security import (
+    decode_token,
+    generate_token,
+    hash_password,
+    verify_password,
+)
 from src.config.database import db
 
-auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
+auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
+
 
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        auth_header = request.headers.get('Authorization')
-        if not auth_header or not auth_header.startswith('Bearer '):
+        auth_header = request.headers.get("Authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
             return jsonify({"error": "Token ausente ou inválido"}), 401
-        
+
         token = auth_header.split(" ")[1]
         try:
             payload = decode_token(token)
-            request.user_id = payload['sub']
+            request.user_id = payload["sub"]
         except ValueError as e:
             return jsonify({"error": str(e)}), 401
-            
+
         return f(*args, **kwargs)
+
     return decorated_function
 
+
 # Etapa 4: Registro e Login
-@auth_bp.route('/register', methods=['POST'])
+@auth_bp.route("/register", methods=["POST"])
 def register():
     data = request.get_json()
-    if not data or not data.get('email') or not data.get('password') or not data.get('name'):
+    if (
+        not data
+        or not data.get("email")
+        or not data.get("password")
+        or not data.get("name")
+    ):
         return jsonify({"error": "Dados incompletos"}), 400
-        
-    if User.query.filter_by(email=data['email']).first():
+
+    if User.query.filter_by(email=data["email"]).first():
         return jsonify({"error": "E-mail já cadastrado"}), 409
-        
-    hashed_pw = hash_password(data['password'])
-    new_user = User(
-        name=data['name'],
-        email=data['email'],
-        password_hash=hashed_pw
-    )
-    
+
+    hashed_pw = hash_password(data["password"])
+    new_user = User(name=data["name"], email=data["email"], password_hash=hashed_pw)
+
     db.session.add(new_user)
     db.session.commit()
-    
+
     return jsonify({"message": "Usuário criado com sucesso!"}), 201
 
-@auth_bp.route('/login', methods=['POST'])
+
+@auth_bp.route("/login", methods=["POST"])
 def login():
     data = request.get_json()
-    if not data or not data.get('email') or not data.get('password'):
+    if not data or not data.get("email") or not data.get("password"):
         return jsonify({"error": "Dados incompletos"}), 400
-        
-    user = User.query.filter_by(email=data['email']).first()
-    if not user or not verify_password(data['password'], user.password_hash):
+
+    user = User.query.filter_by(email=data["email"]).first()
+    if not user or not verify_password(data["password"], user.password_hash):
         return jsonify({"error": "Credenciais inválidas"}), 401
-        
+
     token = generate_token(str(user.id))
-    return jsonify({
-        "token": token, 
-        "user": {"id": str(user.id), "name": user.name, "email": user.email}
-    }), 200
+    return (
+        jsonify(
+            {
+                "token": token,
+                "user": {"id": str(user.id), "name": user.name, "email": user.email},
+            }
+        ),
+        200,
+    )
+
 
 # Etapa 5: Rotas Autenticadas e Logout
-@auth_bp.route('/me', methods=['GET'])
+@auth_bp.route("/me", methods=["GET"])
 @login_required
 def me():
     user = db.session.get(User, request.user_id)
     if not user:
         return jsonify({"error": "Usuário não encontrado"}), 404
-        
-    return jsonify({
-        "id": str(user.id),
-        "name": user.name,
-        "email": user.email,
-        "age": user.age,
-        "theme_dark": user.theme_dark,
-        "notifications_push": user.notifications_push,
-        "notifications_email": user.notifications_email,
-        "notifications_sms": user.notifications_sms,
-        "share_anonymous_data": user.share_anonymous_data,
-        "avatar_url": user.avatar_url,
-        "created_at": user.created_at.isoformat() if user.created_at else None
-    }), 200
 
-@auth_bp.route('/me', methods=['PUT'])
+    return (
+        jsonify(
+            {
+                "id": str(user.id),
+                "name": user.name,
+                "email": user.email,
+                "age": user.age,
+                "theme_dark": user.theme_dark,
+                "notifications_push": user.notifications_push,
+                "notifications_email": user.notifications_email,
+                "notifications_sms": user.notifications_sms,
+                "share_anonymous_data": user.share_anonymous_data,
+                "avatar_url": user.avatar_url,
+                "created_at": user.created_at.isoformat() if user.created_at else None,
+            }
+        ),
+        200,
+    )
+
+
+@auth_bp.route("/me", methods=["PUT"])
 @login_required
 def update_me():
     user = db.session.get(User, request.user_id)
     if not user:
         return jsonify({"error": "Usuário não encontrado"}), 404
-        
+
     data = request.get_json()
-    if 'name' in data: user.name = data['name']
-    if 'age' in data:
+    if "name" in data:
+        user.name = data["name"]
+    if "age" in data:
         try:
-            user.age = int(data['age'])
+            user.age = int(data["age"])
         except (ValueError, TypeError):
             pass
-    if 'theme_dark' in data: user.theme_dark = bool(data['theme_dark'])
-    if 'notifications_email' in data: user.notifications_email = bool(data['notifications_email'])
-    if 'notifications_push' in data: user.notifications_push = bool(data['notifications_push'])
-    if 'notifications_sms' in data: user.notifications_sms = bool(data['notifications_sms'])
-    if 'share_anonymous_data' in data: user.share_anonymous_data = bool(data['share_anonymous_data'])
-    
+    if "theme_dark" in data:
+        user.theme_dark = bool(data["theme_dark"])
+    if "notifications_email" in data:
+        user.notifications_email = bool(data["notifications_email"])
+    if "notifications_push" in data:
+        user.notifications_push = bool(data["notifications_push"])
+    if "notifications_sms" in data:
+        user.notifications_sms = bool(data["notifications_sms"])
+    if "share_anonymous_data" in data:
+        user.share_anonymous_data = bool(data["share_anonymous_data"])
+
     db.session.commit()
     return jsonify({"message": "Perfil atualizado com sucesso"}), 200
 
-UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'static', 'avatars')
+
+UPLOAD_FOLDER = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "static", "avatars"
+)
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-@auth_bp.route('/avatar', methods=['POST'])
+
+@auth_bp.route("/avatar", methods=["POST"])
 @login_required
 def upload_avatar():
-    if 'avatar' not in request.files:
+    if "avatar" not in request.files:
         return jsonify({"error": "Nenhum arquivo enviado"}), 400
-        
-    file = request.files['avatar']
-    if file.filename == '':
+
+    file = request.files["avatar"]
+    if file.filename == "":
         return jsonify({"error": "Nenhum arquivo selecionado"}), 400
-        
+
     if file:
-        filename = secure_filename(f"{request.user_id}_{uuid.uuid4().hex}_{file.filename}")
+        filename = secure_filename(
+            f"{request.user_id}_{uuid.uuid4().hex}_{file.filename}"
+        )
         filepath = os.path.join(UPLOAD_FOLDER, filename)
         file.save(filepath)
-        
+
         user = db.session.get(User, request.user_id)
         user.avatar_url = f"/api/auth/static/avatars/{filename}"
         db.session.commit()
-        
-        return jsonify({"message": "Avatar atualizado", "avatar_url": user.avatar_url}), 200
 
-@auth_bp.route('/static/avatars/<filename>', methods=['GET'])
+        return (
+            jsonify({"message": "Avatar atualizado", "avatar_url": user.avatar_url}),
+            200,
+        )
+
+
+@auth_bp.route("/static/avatars/<filename>", methods=["GET"])
 def get_avatar(filename):
     return send_from_directory(UPLOAD_FOLDER, filename)
 
-@auth_bp.route('/logout', methods=['POST'])
+
+@auth_bp.route("/logout", methods=["POST"])
 @login_required
 def logout():
     return jsonify({"message": "Logout realizado com sucesso!"}), 200

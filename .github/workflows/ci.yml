@@ -3,10 +3,13 @@ name: Continuous Integration
 on:
   push:
     branches:
+      - main
+      - develop
       - 'feature/*'
       - 'ci/*'
   pull_request:
     branches:
+      - main
       - develop
       - 'ci/*'
       - 'feature/*'
@@ -45,8 +48,13 @@ jobs:
 
       - name: Run Backend Tests
         run: |
-          # Se houver testes, o comando seria algo como `pytest`
-          echo "No automated tests implemented yet for backend."
+          pytest --cov=src --cov-report=xml:coverage.xml
+
+      - name: Upload Backend Coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: planeja_ai/backend/coverage.xml
 
   frontend:
     name: Frontend (Flutter)
@@ -79,7 +87,45 @@ jobs:
       - name: Run Flutter Tests
         run: |
           if [ -d "test" ]; then
-            flutter test
+            flutter test --coverage
           else
             echo "No test directory found."
           fi
+
+      - name: Upload Frontend Coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: planeja_ai/coverage/lcov.info
+
+  sonarcloud:
+    name: SonarCloud / SonarQube Analysis
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download Backend Coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-coverage
+          path: planeja_ai/backend
+
+      - name: Download Frontend Coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-coverage
+          path: planeja_ai/coverage
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.python.coverage.reportPaths=planeja_ai/backend/coverage.xml
+            -Dsonar.dart.lcov.reportPath=planeja_ai/coverage/lcov.info
