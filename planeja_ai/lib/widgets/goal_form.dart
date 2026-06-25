@@ -40,7 +40,6 @@ const _kIcons = <String, IconData>{
   'film': LucideIcons.film,
 };
 
-
 class GoalForm extends StatefulWidget {
   final Function(Goal) onAddGoal;
   final VoidCallback onCancel;
@@ -63,7 +62,7 @@ class _GoalFormState extends State<GoalForm> {
   final _amountController = TextEditingController();
   final _categoryController = TextEditingController();
   final _categoryFocusNode = FocusNode();
-  
+
   DateTime? _selectedDate;
   bool _showCategoryOptions = false;
   bool _isDialogOpen = false;
@@ -73,7 +72,8 @@ class _GoalFormState extends State<GoalForm> {
     super.initState();
     if (widget.goalToEdit != null) {
       _nameController.text = widget.goalToEdit!.name;
-      _amountController.text = widget.goalToEdit!.amount.toStringAsFixed(2).replaceAll('.', ',');
+      _amountController.text =
+          widget.goalToEdit!.amount.toStringAsFixed(2).replaceAll('.', ',');
       _categoryController.text = widget.goalToEdit!.category;
       _selectedDate = widget.goalToEdit!.deadline;
     }
@@ -107,7 +107,7 @@ class _GoalFormState extends State<GoalForm> {
       final limitText = _amountController.text.replaceAll(',', '.');
       final limitStr = limitText.isEmpty ? '0' : limitText;
       final amount = double.tryParse(limitStr) ?? 0.0;
-      
+
       final provider = context.read<FinanceProvider>();
       String? categoryId;
       String? customCategory;
@@ -115,7 +115,8 @@ class _GoalFormState extends State<GoalForm> {
       if (categoryName.isNotEmpty) {
         final matchedCategory = provider.goalCategories.firstWhere(
           (cat) => cat.name.toLowerCase() == categoryName.toLowerCase(),
-          orElse: () => const AppCategory(id: '', name: '', colorHex: '', iconName: ''),
+          orElse: () =>
+              const AppCategory(id: '', name: '', colorHex: '', iconName: ''),
         );
 
         if (matchedCategory.id.isEmpty) {
@@ -153,16 +154,18 @@ class _GoalFormState extends State<GoalForm> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Erro ao criar meta: ${e.toString().replaceFirst('Exception: ', '')}'),
+              content: Text(
+                  'Erro ao criar meta: ${e.toString().replaceFirst('Exception: ', '')}'),
               backgroundColor: Colors.red,
             ),
           );
         }
       }
     } else {
-       ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Por favor, preencha todos os campos e selecione o prazo.'),
+          content: const Text(
+              'Por favor, preencha todos os campos e selecione o prazo.'),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -213,11 +216,18 @@ class _GoalFormState extends State<GoalForm> {
               children: [
                 Row(
                   children: [
-                    Icon(widget.goalToEdit != null ? Icons.edit_note : Icons.track_changes, color: theme.colorScheme.primary),
+                    Icon(
+                        widget.goalToEdit != null
+                            ? Icons.edit_note
+                            : Icons.track_changes,
+                        color: theme.colorScheme.primary),
                     const SizedBox(width: 8),
                     Text(
-                      widget.goalToEdit != null ? 'Editar Meta Financeira' : 'Criar Nova Meta Financeira',
-                      style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                      widget.goalToEdit != null
+                          ? 'Editar Meta Financeira'
+                          : 'Criar Nova Meta Financeira',
+                      style: theme.textTheme.titleLarge
+                          ?.copyWith(fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -231,7 +241,8 @@ class _GoalFormState extends State<GoalForm> {
                       children: [
                         Padding(
                           padding: const EdgeInsets.only(left: 4, bottom: 8),
-                          child: Text('Nome da Meta', style: theme.textTheme.titleSmall),
+                          child: Text('Nome da Meta',
+                              style: theme.textTheme.titleSmall),
                         ),
                         TextFormField(
                           controller: _nameController,
@@ -244,7 +255,8 @@ class _GoalFormState extends State<GoalForm> {
                             });
                           },
                           validator: (value) {
-                            if (value == null || value.trim().isEmpty) return 'Por favor, insira um nome';
+                            if (value == null || value.trim().isEmpty)
+                              return 'Por favor, insira um nome';
                             return null;
                           },
                         ),
@@ -254,13 +266,15 @@ class _GoalFormState extends State<GoalForm> {
                     Widget amountField = Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                         Padding(
+                        Padding(
                           padding: const EdgeInsets.only(left: 4, bottom: 8),
-                          child: Text('Valor Alvo (R\$)', style: theme.textTheme.titleSmall),
+                          child: Text('Valor Alvo (R\$)',
+                              style: theme.textTheme.titleSmall),
                         ),
                         TextFormField(
                           controller: _amountController,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true),
                           decoration: const InputDecoration(
                             hintText: '0.00',
                           ),
@@ -270,9 +284,12 @@ class _GoalFormState extends State<GoalForm> {
                             });
                           },
                           validator: (value) {
-                            if (value == null || value.trim().isEmpty) return 'Por favor, insira um valor';
-                            final parsedValue = double.tryParse(value.replaceAll(',', '.'));
-                            if (parsedValue == null || parsedValue <= 0) return 'Insira um valor maior que zero';
+                            if (value == null || value.trim().isEmpty)
+                              return 'Por favor, insira um valor';
+                            final parsedValue =
+                                double.tryParse(value.replaceAll(',', '.'));
+                            if (parsedValue == null || parsedValue <= 0)
+                              return 'Insira um valor maior que zero';
                             return null;
                           },
                         ),
@@ -284,7 +301,8 @@ class _GoalFormState extends State<GoalForm> {
                       children: [
                         Padding(
                           padding: const EdgeInsets.only(left: 4, bottom: 8),
-                          child: Text('Prazo', style: theme.textTheme.titleSmall),
+                          child:
+                              Text('Prazo', style: theme.textTheme.titleSmall),
                         ),
                         InkWell(
                           onTap: () async {
@@ -298,8 +316,13 @@ class _GoalFormState extends State<GoalForm> {
                               hintText: 'Selecione uma data',
                             ),
                             child: Text(
-                              _selectedDate == null ? 'Selecione uma data' : dateFormatter.format(_selectedDate!),
-                              style: TextStyle(color: _selectedDate == null ? Colors.grey : null),
+                              _selectedDate == null
+                                  ? 'Selecione uma data'
+                                  : dateFormatter.format(_selectedDate!),
+                              style: TextStyle(
+                                  color: _selectedDate == null
+                                      ? Colors.grey
+                                      : null),
                             ),
                           ),
                         ),
@@ -309,9 +332,10 @@ class _GoalFormState extends State<GoalForm> {
                     Widget categoryField = Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                         Padding(
+                        Padding(
                           padding: const EdgeInsets.only(left: 4, bottom: 8),
-                          child: Text('Categoria', style: theme.textTheme.titleSmall),
+                          child: Text('Categoria',
+                              style: theme.textTheme.titleSmall),
                         ),
                         TextField(
                           controller: _categoryController,
@@ -319,7 +343,9 @@ class _GoalFormState extends State<GoalForm> {
                           decoration: InputDecoration(
                             hintText: 'Selecione ou digite...',
                             suffixIcon: IconButton(
-                              icon: Icon(_showCategoryOptions ? LucideIcons.chevronUp : LucideIcons.chevronDown),
+                              icon: Icon(_showCategoryOptions
+                                  ? LucideIcons.chevronUp
+                                  : LucideIcons.chevronDown),
                               onPressed: () {
                                 if (_showCategoryOptions) {
                                   _categoryFocusNode.unfocus();
@@ -346,12 +372,20 @@ class _GoalFormState extends State<GoalForm> {
                         children: [
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [ Expanded(child: nameField), const SizedBox(width: 16), Expanded(child: amountField) ],
+                            children: [
+                              Expanded(child: nameField),
+                              const SizedBox(width: 16),
+                              Expanded(child: amountField)
+                            ],
                           ),
                           const SizedBox(height: 16),
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [ Expanded(child: dateField), const SizedBox(width: 16), Expanded(child: categoryField) ],
+                            children: [
+                              Expanded(child: dateField),
+                              const SizedBox(width: 16),
+                              Expanded(child: categoryField)
+                            ],
                           ),
                         ],
                       );
@@ -370,7 +404,6 @@ class _GoalFormState extends State<GoalForm> {
                     }
                   },
                 ),
-                
                 if (_showCategoryOptions)
                   AnimatedContainer(
                     duration: 200.ms,
@@ -390,8 +423,10 @@ class _GoalFormState extends State<GoalForm> {
                     ),
                     child: Consumer<FinanceProvider>(
                       builder: (context, provider, _) {
-                        final query = _categoryController.text.trim().toLowerCase();
-                        final exactMatch = provider.goalCategories.any((c) => c.name.toLowerCase() == query);
+                        final query =
+                            _categoryController.text.trim().toLowerCase();
+                        final exactMatch = provider.goalCategories
+                            .any((c) => c.name.toLowerCase() == query);
                         final filtered = exactMatch
                             ? provider.goalCategories
                             : provider.goalCategories.where((cat) {
@@ -401,19 +436,25 @@ class _GoalFormState extends State<GoalForm> {
                         return Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            if (query.isNotEmpty && !filtered.any((c) => c.name.toLowerCase() == query))
+                            if (query.isNotEmpty &&
+                                !filtered
+                                    .any((c) => c.name.toLowerCase() == query))
                               ListTile(
-                                leading: const Icon(LucideIcons.plusCircle, color: Colors.blue),
+                                leading: const Icon(LucideIcons.plusCircle,
+                                    color: Colors.blue),
                                 title: Text("Salvar '$query' como fixa"),
-                                subtitle: const Text('Ficará disponível como opção pronta'),
+                                subtitle: const Text(
+                                    'Ficará disponível como opção pronta'),
                                 onTap: () {
-                                  _showCategoryDialog(name: _categoryController.text.trim());
+                                  _showCategoryDialog(
+                                      name: _categoryController.text.trim());
                                 },
                               ),
                             if (provider.isLoadingCategories)
                               const Padding(
                                 padding: EdgeInsets.all(16.0),
-                                child: Center(child: CircularProgressIndicator()),
+                                child:
+                                    Center(child: CircularProgressIndicator()),
                               )
                             else if (filtered.isEmpty && query.isEmpty)
                               const Padding(
@@ -421,7 +462,8 @@ class _GoalFormState extends State<GoalForm> {
                                 child: Text(
                                   'Nenhuma categoria de meta salva.\nDigite um nome acima para começar!',
                                   textAlign: TextAlign.center,
-                                  style: TextStyle(fontSize: 13, color: Colors.grey),
+                                  style: TextStyle(
+                                      fontSize: 13, color: Colors.grey),
                                 ),
                               )
                             else
@@ -432,7 +474,8 @@ class _GoalFormState extends State<GoalForm> {
                                   itemBuilder: (ctx, idx) {
                                     final cat = filtered[idx];
                                     final color = Color(cat.colorValue);
-                                    final icon = _kIcons[cat.iconName] ?? LucideIcons.helpCircle;
+                                    final icon = _kIcons[cat.iconName] ??
+                                        LucideIcons.helpCircle;
 
                                     return ListTile(
                                       dense: true,
@@ -442,19 +485,27 @@ class _GoalFormState extends State<GoalForm> {
                                           color: color.withOpacity(0.15),
                                           shape: BoxShape.circle,
                                         ),
-                                        child: Icon(icon, color: color, size: 14),
+                                        child:
+                                            Icon(icon, color: color, size: 14),
                                       ),
-                                      title: Text(cat.name, style: const TextStyle(fontWeight: FontWeight.w500)),
+                                      title: Text(cat.name,
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.w500)),
                                       trailing: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           IconButton(
-                                            icon: const Icon(LucideIcons.edit3, size: 14),
-                                            onPressed: () => _showCategoryDialog(editing: cat),
+                                            icon: const Icon(LucideIcons.edit3,
+                                                size: 14),
+                                            onPressed: () =>
+                                                _showCategoryDialog(
+                                                    editing: cat),
                                           ),
                                           IconButton(
-                                            icon: const Icon(LucideIcons.trash2, size: 14, color: Colors.red),
-                                            onPressed: () => _deleteCategory(cat),
+                                            icon: const Icon(LucideIcons.trash2,
+                                                size: 14, color: Colors.red),
+                                            onPressed: () =>
+                                                _deleteCategory(cat),
                                           ),
                                         ],
                                       ),
@@ -473,8 +524,10 @@ class _GoalFormState extends State<GoalForm> {
                         );
                       },
                     ),
-                  ).animate().fade(duration: 150.ms).slideY(begin: -0.05, end: 0, duration: 150.ms),
-
+                  )
+                      .animate()
+                      .fade(duration: 150.ms)
+                      .slideY(begin: -0.05, end: 0, duration: 150.ms),
                 const SizedBox(height: 24),
                 Row(
                   children: [
@@ -482,16 +535,22 @@ class _GoalFormState extends State<GoalForm> {
                       flex: 1,
                       child: ElevatedButton.icon(
                         onPressed: _submitForm,
-                        icon: Icon(widget.goalToEdit != null ? Icons.save : Icons.add, size: 18),
-                        label: Text(widget.goalToEdit != null ? 'Salvar Alterações' : 'Criar Meta'),
+                        icon: Icon(
+                            widget.goalToEdit != null ? Icons.save : Icons.add,
+                            size: 18),
+                        label: Text(widget.goalToEdit != null
+                            ? 'Salvar Alterações'
+                            : 'Criar Meta'),
                       ),
                     ),
                     const SizedBox(width: 12),
                     OutlinedButton(
                       onPressed: widget.onCancel,
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 16),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8)),
                       ),
                       child: const Text('Cancelar'),
                     ),
@@ -511,7 +570,8 @@ class _GoalFormState extends State<GoalForm> {
     });
     showDialog(
       context: context,
-      builder: (ctx) => CategoryDialog(editing: editing, initialName: name, type: 'goal'),
+      builder: (ctx) =>
+          CategoryDialog(editing: editing, initialName: name, type: 'goal'),
     ).then((result) {
       if (!mounted) return;
       setState(() {
@@ -528,13 +588,17 @@ class _GoalFormState extends State<GoalForm> {
       await context.read<FinanceProvider>().deleteCategory(cat.id);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Categoria removida com sucesso!'), backgroundColor: Colors.green),
+          const SnackBar(
+              content: Text('Categoria removida com sucesso!'),
+              backgroundColor: Colors.green),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', '')), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text(e.toString().replaceFirst('Exception: ', '')),
+              backgroundColor: Colors.red),
         );
       }
     }

@@ -51,28 +51,31 @@ class BudgetCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currencyFormatter = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+    final currencyFormatter =
+        NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
     final financeProvider = Provider.of<FinanceProvider>(context);
 
     // Calcular limite e saldo semanal dinâmico em tempo real
     final weeklyDetails = budget.getWeeklyDetails(financeProvider.transactions);
     final weeklyRemaining = weeklyDetails['weeklyRemaining'] ?? 0.0;
-    
+
     final ratio = budget.spent / budget.monthlyLimit;
     final isDanger = ratio >= 1.0;
     final isWarning = !isDanger && ratio >= 0.8;
-    
+
     final theme = Theme.of(context);
-    final statusColor = isDanger 
-        ? theme.colorScheme.error 
-        : isWarning ? Colors.orange : Colors.green;
+    final statusColor = isDanger
+        ? theme.colorScheme.error
+        : isWarning
+            ? Colors.orange
+            : Colors.green;
 
     final progressValue = budget.progressPercentage / 100.0;
-    
+
     final mutedColor = theme.colorScheme.onSurface.withOpacity(0.6);
 
-    final categoryColor = budget.categoryObj != null 
-        ? Color(budget.categoryObj!.colorValue) 
+    final categoryColor = budget.categoryObj != null
+        ? Color(budget.categoryObj!.colorValue)
         : theme.colorScheme.primary;
 
     final categoryIcon = budget.categoryObj != null
@@ -100,7 +103,8 @@ class BudgetCard extends StatelessWidget {
                           color: categoryColor.withOpacity(0.15),
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(categoryIcon, color: categoryColor, size: 18),
+                        child:
+                            Icon(categoryIcon, color: categoryColor, size: 18),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
@@ -119,7 +123,8 @@ class BudgetCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: statusColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
@@ -137,7 +142,8 @@ class BudgetCard extends StatelessWidget {
                           ),
                           if (isDanger || isWarning) ...[
                             const SizedBox(width: 4),
-                            Icon(Icons.warning_amber_rounded, size: 12, color: statusColor),
+                            Icon(Icons.warning_amber_rounded,
+                                size: 12, color: statusColor),
                           ]
                         ],
                       ),
@@ -147,7 +153,9 @@ class BudgetCard extends StatelessWidget {
                       IconButton(
                         constraints: const BoxConstraints(),
                         padding: EdgeInsets.zero,
-                        icon: Icon(LucideIcons.edit3, size: 16, color: theme.colorScheme.primary.withOpacity(0.7)),
+                        icon: Icon(LucideIcons.edit3,
+                            size: 16,
+                            color: theme.colorScheme.primary.withOpacity(0.7)),
                         onPressed: () => onEdit!(budget),
                       ),
                     ],
@@ -156,7 +164,9 @@ class BudgetCard extends StatelessWidget {
                       IconButton(
                         constraints: const BoxConstraints(),
                         padding: EdgeInsets.zero,
-                        icon: Icon(LucideIcons.trash2, size: 16, color: theme.colorScheme.error.withOpacity(0.7)),
+                        icon: Icon(LucideIcons.trash2,
+                            size: 16,
+                            color: theme.colorScheme.error.withOpacity(0.7)),
                         onPressed: onDelete,
                       ),
                     ],
@@ -165,17 +175,20 @@ class BudgetCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            
+
             // Usado e Limite Mensal
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Gasto este mês', style: theme.textTheme.bodyMedium?.copyWith(color: mutedColor)),
-                Text(currencyFormatter.format(budget.spent), style: const TextStyle(fontWeight: FontWeight.w600)),
+                Text('Gasto este mês',
+                    style: theme.textTheme.bodyMedium
+                        ?.copyWith(color: mutedColor)),
+                Text(currencyFormatter.format(budget.spent),
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
               ],
             ),
             const SizedBox(height: 8),
-            
+
             // Barra de Progresso
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
@@ -187,7 +200,7 @@ class BudgetCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            
+
             // Detalhes Abaixo da Barra
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -202,7 +215,8 @@ class BudgetCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   '${budget.progressPercentage.toStringAsFixed(0)}%',
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w600, fontSize: 12),
                 ),
               ],
             ),
@@ -219,18 +233,23 @@ class BudgetCard extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.calendar_month, size: 14, color: mutedColor),
+                          Icon(Icons.calendar_month,
+                              size: 14, color: mutedColor),
                           const SizedBox(width: 4),
-                          Text('Mensal', style: TextStyle(color: mutedColor, fontSize: 12)),
+                          Text('Mensal',
+                              style:
+                                  TextStyle(color: mutedColor, fontSize: 12)),
                         ],
                       ),
                       const SizedBox(height: 4),
                       Text(
                         currencyFormatter.format(budget.monthlyRemaining),
                         style: TextStyle(
-                          fontSize: 15, 
+                          fontSize: 15,
                           fontWeight: FontWeight.bold,
-                          color: budget.monthlyRemaining >= 0 ? Colors.green : theme.colorScheme.error,
+                          color: budget.monthlyRemaining >= 0
+                              ? Colors.green
+                              : theme.colorScheme.error,
                         ),
                       ),
                       Text(
@@ -249,24 +268,34 @@ class BudgetCard extends StatelessWidget {
                         children: [
                           Icon(Icons.access_time, size: 14, color: mutedColor),
                           const SizedBox(width: 4),
-                          Text('Semanal', style: TextStyle(color: mutedColor, fontSize: 12)),
+                          Text('Semanal',
+                              style:
+                                  TextStyle(color: mutedColor, fontSize: 12)),
                         ],
                       ),
                       const SizedBox(height: 4),
                       Text(
                         currencyFormatter.format(weeklyRemaining),
                         style: TextStyle(
-                          fontSize: 15, 
+                          fontSize: 15,
                           fontWeight: FontWeight.bold,
-                          color: weeklyRemaining >= 0 ? Colors.green : theme.colorScheme.error,
+                          color: weeklyRemaining >= 0
+                              ? Colors.green
+                              : theme.colorScheme.error,
                         ),
                       ),
                       Text(
-                        weeklyRemaining >= 0 ? 'disponível esta semana' : 'excedido esta semana',
+                        weeklyRemaining >= 0
+                            ? 'disponível esta semana'
+                            : 'excedido esta semana',
                         style: TextStyle(
-                          color: weeklyRemaining >= 0 ? mutedColor : theme.colorScheme.error.withOpacity(0.8),
+                          color: weeklyRemaining >= 0
+                              ? mutedColor
+                              : theme.colorScheme.error.withOpacity(0.8),
                           fontSize: 10,
-                          fontWeight: weeklyRemaining >= 0 ? FontWeight.normal : FontWeight.bold,
+                          fontWeight: weeklyRemaining >= 0
+                              ? FontWeight.normal
+                              : FontWeight.bold,
                         ),
                       ),
                     ],

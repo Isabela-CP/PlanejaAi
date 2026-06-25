@@ -6,8 +6,8 @@ class Logo extends StatelessWidget {
   final MainAxisAlignment mainAxisAlignment;
 
   const Logo({
-    super.key, 
-    this.size = 48.0, 
+    super.key,
+    this.size = 48.0,
     this.showText = true,
     this.mainAxisAlignment = MainAxisAlignment.center,
   });
@@ -24,8 +24,9 @@ class Logo extends StatelessWidget {
           height: size,
           fit: BoxFit.contain,
           errorBuilder: (context, error, stackTrace) {
-             // Retorno fallback para quando a imagem não for encontrada
-             return Icon(Icons.image_not_supported, size: size, color: Colors.grey);
+            // Retorno fallback para quando a imagem não for encontrada
+            return Icon(Icons.image_not_supported,
+                size: size, color: Colors.grey);
           },
         ),
         if (showText) ...[

@@ -6,7 +6,7 @@ import '../core/services/api_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   final ApiService _apiService = ApiService();
-  
+
   bool _isAuthenticated = false;
   String? _username;
   Map<String, dynamic>? _userData;
@@ -71,7 +71,9 @@ class AuthProvider extends ChangeNotifier {
         // Fetch complete user data
         await fetchMe();
       } else {
-        throw Exception(data is Map ? (data['error'] ?? 'Falha na autenticação') : 'Falha na autenticação');
+        throw Exception(data is Map
+            ? (data['error'] ?? 'Falha na autenticação')
+            : 'Falha na autenticação');
       }
     } on SocketException {
       throw Exception('Sem conexão com o servidor. Verifique sua internet.');
@@ -94,7 +96,9 @@ class AuthProvider extends ChangeNotifier {
         // Automatically login after successful registration
         await login(email, password);
       } else {
-        throw Exception(data is Map ? (data['error'] ?? 'Falha ao criar conta') : 'Falha ao criar conta');
+        throw Exception(data is Map
+            ? (data['error'] ?? 'Falha ao criar conta')
+            : 'Falha ao criar conta');
       }
     } on SocketException {
       throw Exception('Sem conexão com o servidor. Verifique sua internet.');
@@ -137,7 +141,9 @@ class AuthProvider extends ChangeNotifier {
         await fetchMe();
       } else {
         final err = _apiService.decode(response);
-        throw Exception(err is Map ? (err['error'] ?? 'Falha ao atualizar perfil') : 'Falha ao atualizar perfil');
+        throw Exception(err is Map
+            ? (err['error'] ?? 'Falha ao atualizar perfil')
+            : 'Falha ao atualizar perfil');
       }
     } finally {
       _setLoading(false);
@@ -157,7 +163,9 @@ class AuthProvider extends ChangeNotifier {
         await fetchMe();
       } else {
         final err = _apiService.decode(response);
-        throw Exception(err is Map ? (err['error'] ?? 'Falha ao fazer upload da imagem') : 'Falha ao fazer upload da imagem');
+        throw Exception(err is Map
+            ? (err['error'] ?? 'Falha ao fazer upload da imagem')
+            : 'Falha ao fazer upload da imagem');
       }
     } finally {
       _setLoading(false);

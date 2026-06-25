@@ -18,12 +18,13 @@ class GoalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currencyFormatter = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+    final currencyFormatter =
+        NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
     final dateFormatter = DateFormat('dd/MM/yyyy');
-    
+
     final percentage = goal.progressPercentage;
     final daysLeft = goal.daysLeft;
-    
+
     final theme = Theme.of(context);
     final mutedColor = theme.colorScheme.onSurface.withOpacity(0.6);
 
@@ -65,9 +66,11 @@ class GoalCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          border: Border.all(color: mutedColor.withOpacity(0.3)),
+                          border:
+                              Border.all(color: mutedColor.withOpacity(0.3)),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -96,14 +99,16 @@ class GoalCard extends StatelessWidget {
                           context: context,
                           builder: (context) => AlertDialog(
                             title: const Text('Excluir Meta'),
-                            content: Text('Tem certeza que deseja excluir "${goal.name}"? Esta ação não pode ser desfeita.'),
+                            content: Text(
+                                'Tem certeza que deseja excluir "${goal.name}"? Esta ação não pode ser desfeita.'),
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.of(context).pop(),
                                 child: const Text('Cancelar'),
                               ),
                               ElevatedButton(
-                                style: ElevatedButton.styleFrom(backgroundColor: theme.colorScheme.error),
+                                style: ElevatedButton.styleFrom(
+                                    backgroundColor: theme.colorScheme.error),
                                 onPressed: () {
                                   Navigator.of(context).pop();
                                   onDelete();
@@ -120,21 +125,25 @@ class GoalCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            
+
             // Badge de Status e Percentual
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Flexible(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: statusColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
                       statusLabel,
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: statusColor),
+                      style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: statusColor),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -142,13 +151,16 @@ class GoalCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   '${percentage.toStringAsFixed(0)}% Concluído',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: statusColor),
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: statusColor),
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
             const SizedBox(height: 8),
-            
+
             // Progress Bar
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
@@ -160,7 +172,7 @@ class GoalCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            
+
             // Detalhes da Meta
             Column(
               children: [
@@ -168,7 +180,8 @@ class GoalCard extends StatelessWidget {
                   context: context,
                   icon: Icons.attach_money,
                   label: 'Progresso',
-                  value: '${currencyFormatter.format(goal.currentAmount)} / ${currencyFormatter.format(goal.amount)}',
+                  value:
+                      '${currencyFormatter.format(goal.currentAmount)} / ${currencyFormatter.format(goal.amount)}',
                 ),
                 const SizedBox(height: 8),
                 _buildDetailRow(
@@ -182,31 +195,42 @@ class GoalCard extends StatelessWidget {
                   context: context,
                   icon: Icons.timelapse,
                   label: 'Dias restantes',
-                  value: daysLeft < 0 ? '${daysLeft.abs()} dias atrasados' : '$daysLeft dias',
-                  valueColor: daysLeft < 0 ? theme.colorScheme.error : (daysLeft <= 30 ? Colors.orange[600] : mutedColor),
+                  value: daysLeft < 0
+                      ? '${daysLeft.abs()} dias atrasados'
+                      : '$daysLeft dias',
+                  valueColor: daysLeft < 0
+                      ? theme.colorScheme.error
+                      : (daysLeft <= 30 ? Colors.orange[600] : mutedColor),
                 ),
               ],
             ),
             const SizedBox(height: 12),
             Divider(color: theme.dividerColor),
             const SizedBox(height: 12),
-            
+
             Builder(
               builder: (context) {
                 final isOver = goal.currentAmount > goal.amount;
-                final remainingVal = isOver ? (goal.currentAmount - goal.amount) : goal.remainingAmount;
+                final remainingVal = isOver
+                    ? (goal.currentAmount - goal.amount)
+                    : goal.remainingAmount;
                 final label = isOver ? 'Excedente' : 'Faltam';
-                final displayColor = isOver ? Colors.green : theme.colorScheme.primary;
+                final displayColor =
+                    isOver ? Colors.green : theme.colorScheme.primary;
 
                 return Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(label, style: TextStyle(fontSize: 12, color: mutedColor)),
+                    Text(label,
+                        style: TextStyle(fontSize: 12, color: mutedColor)),
                     const SizedBox(width: 8),
                     Flexible(
                       child: Text(
                         currencyFormatter.format(remainingVal),
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: displayColor),
+                        style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: displayColor),
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.right,
                       ),
@@ -222,10 +246,12 @@ class GoalCard extends StatelessWidget {
                   child: ElevatedButton.icon(
                     onPressed: () => _showManageMoneyDialog(context),
                     icon: const Icon(Icons.add_card, size: 14),
-                    label: const Text('Lançar Valor', style: TextStyle(fontSize: 12)),
+                    label: const Text('Lançar Valor',
+                        style: TextStyle(fontSize: 12)),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 8),
-                      backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+                      backgroundColor:
+                          theme.colorScheme.primary.withOpacity(0.1),
                       foregroundColor: theme.colorScheme.primary,
                       elevation: 0,
                     ),
@@ -242,20 +268,24 @@ class GoalCard extends StatelessWidget {
   void _showManageMoneyDialog(BuildContext context) {
     final controller = TextEditingController();
     final theme = Theme.of(context);
-    
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Lançar Valor na Meta\n"${goal.name}"', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        title: Text('Lançar Valor na Meta\n"${goal.name}"',
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Saldo atual: R\$ ${goal.currentAmount.toStringAsFixed(2)}', style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6))),
+            Text('Saldo atual: R\$ ${goal.currentAmount.toStringAsFixed(2)}',
+                style: TextStyle(
+                    color: theme.colorScheme.onSurface.withOpacity(0.6))),
             const SizedBox(height: 16),
             TextField(
               controller: controller,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
               decoration: const InputDecoration(
                 labelText: 'Valor (R\$)',
                 hintText: '0.00',
@@ -278,32 +308,45 @@ class GoalCard extends StatelessWidget {
               final val = double.tryParse(text) ?? 0.0;
               if (val <= 0) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Por favor, insira um valor válido maior que zero.'), backgroundColor: Colors.red),
+                  const SnackBar(
+                      content: Text(
+                          'Por favor, insira um valor válido maior que zero.'),
+                      backgroundColor: Colors.red),
                 );
                 return;
               }
               if (val > goal.currentAmount) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Valor de resgate excede o saldo atual da meta.'), backgroundColor: Colors.red),
+                  const SnackBar(
+                      content: Text(
+                          'Valor de resgate excede o saldo atual da meta.'),
+                      backgroundColor: Colors.red),
                 );
                 return;
               }
               Navigator.pop(ctx);
               try {
                 final newAmount = goal.currentAmount - val;
-                await Provider.of<FinanceProvider>(context, listen: false).updateGoal(
+                await Provider.of<FinanceProvider>(context, listen: false)
+                    .updateGoal(
                   goal.id,
                   currentValue: newAmount,
                 );
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Resgatado R\$ ${val.toStringAsFixed(2)} da meta "${goal.name}"!'), backgroundColor: Colors.green),
+                    SnackBar(
+                        content: Text(
+                            'Resgatado R\$ ${val.toStringAsFixed(2)} da meta "${goal.name}"!'),
+                        backgroundColor: Colors.green),
                   );
                 }
               } catch (e) {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Erro: ${e.toString().replaceFirst('Exception: ', '')}'), backgroundColor: Colors.red),
+                    SnackBar(
+                        content: Text(
+                            'Erro: ${e.toString().replaceFirst('Exception: ', '')}'),
+                        backgroundColor: Colors.red),
                   );
                 }
               }
@@ -316,26 +359,36 @@ class GoalCard extends StatelessWidget {
               final val = double.tryParse(text) ?? 0.0;
               if (val <= 0) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Por favor, insira um valor válido maior que zero.'), backgroundColor: Colors.red),
+                  const SnackBar(
+                      content: Text(
+                          'Por favor, insira um valor válido maior que zero.'),
+                      backgroundColor: Colors.red),
                 );
                 return;
               }
               Navigator.pop(ctx);
               try {
                 final newAmount = goal.currentAmount + val;
-                await Provider.of<FinanceProvider>(context, listen: false).updateGoal(
+                await Provider.of<FinanceProvider>(context, listen: false)
+                    .updateGoal(
                   goal.id,
                   currentValue: newAmount,
                 );
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Guardado R\$ ${val.toStringAsFixed(2)} na meta "${goal.name}"!'), backgroundColor: Colors.green),
+                    SnackBar(
+                        content: Text(
+                            'Guardado R\$ ${val.toStringAsFixed(2)} na meta "${goal.name}"!'),
+                        backgroundColor: Colors.green),
                   );
                 }
               } catch (e) {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Erro: ${e.toString().replaceFirst('Exception: ', '')}'), backgroundColor: Colors.red),
+                    SnackBar(
+                        content: Text(
+                            'Erro: ${e.toString().replaceFirst('Exception: ', '')}'),
+                        backgroundColor: Colors.red),
                   );
                 }
               }
@@ -368,8 +421,9 @@ class GoalCard extends StatelessWidget {
         const SizedBox(width: 8),
         Flexible(
           child: Text(
-            value, 
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: valueColor),
+            value,
+            style: TextStyle(
+                fontSize: 12, fontWeight: FontWeight.w500, color: valueColor),
             textAlign: TextAlign.right,
             overflow: TextOverflow.ellipsis,
           ),
