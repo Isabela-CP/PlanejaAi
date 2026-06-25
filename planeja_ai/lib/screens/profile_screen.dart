@@ -18,7 +18,6 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-
   // Formulário
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
@@ -74,7 +73,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         );
       }
-    } catch(e) {
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
@@ -90,7 +89,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final themeProvider = context.read<ThemeProvider>();
       final isDark = themeProvider.themeMode == ThemeMode.dark;
-      
+
       await context.read<AuthProvider>().updateProfile({
         'notifications_push': _notificationsEnabled,
         'share_anonymous_data': _shareDataEnabled,
@@ -104,7 +103,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         );
       }
-    } catch(e) {
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
@@ -119,23 +118,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
       if (image == null) return;
-      
+
       setState(() => _isLoading = true);
       final bytes = await image.readAsBytes();
       await context.read<AuthProvider>().uploadAvatar(bytes, image.name);
-      
+
       if (mounted) {
         setState(() {
-           _avatarUrl = context.read<AuthProvider>().userData?['avatar_url'];
+          _avatarUrl = context.read<AuthProvider>().userData?['avatar_url'];
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Foto atualizada!'), backgroundColor: Colors.green),
+          const SnackBar(
+              content: Text('Foto atualizada!'), backgroundColor: Colors.green),
         );
       }
     } catch (e) {
       if (mounted) {
-         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao atualizar foto: $e'), backgroundColor: Colors.red),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Erro ao atualizar foto: $e'),
+              backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -149,7 +151,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       children: [
         Icon(icon, size: 18, color: theme.colorScheme.primary),
         const SizedBox(width: 8),
-        Text(title, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+        Text(title,
+            style: theme.textTheme.titleLarge
+                ?.copyWith(fontWeight: FontWeight.bold)),
       ],
     );
   }
@@ -174,7 +178,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                Text(title,
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 2),
                 Text(subtitle,
                     style: TextStyle(
@@ -202,8 +207,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
       try {
         final dt = DateTime.parse(user['created_at']);
         final months = [
-          'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-          'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+          'Janeiro',
+          'Fevereiro',
+          'Março',
+          'Abril',
+          'Maio',
+          'Junho',
+          'Julho',
+          'Agosto',
+          'Setembro',
+          'Outubro',
+          'Novembro',
+          'Dezembro'
         ];
         memberSince = '${months[dt.month - 1]} ${dt.year}';
       } catch (e) {
@@ -228,7 +243,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSectionTitle(context, LucideIcons.info, 'Informações da Conta'),
+            _buildSectionTitle(
+                context, LucideIcons.info, 'Informações da Conta'),
             const SizedBox(height: 16),
             LayoutBuilder(builder: (context, constraints) {
               final cols = constraints.maxWidth > 500 ? 3 : 1;
@@ -236,21 +252,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 return IntrinsicHeight(
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: items.map((item) => Expanded(
-                      child: Padding(
-                        padding: EdgeInsets.only(right: item != items.last ? 12 : 0),
-                        child: _buildAccountInfoItem(context, item['label']!, item['value']!),
-                      ),
-                    )).toList(),
+                    children: items
+                        .map((item) => Expanded(
+                              child: Padding(
+                                padding: EdgeInsets.only(
+                                    right: item != items.last ? 12 : 0),
+                                child: _buildAccountInfoItem(
+                                    context, item['label']!, item['value']!),
+                              ),
+                            ))
+                        .toList(),
                   ),
                 );
               }
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: items.map((item) => Padding(
-                  padding: EdgeInsets.only(bottom: item != items.last ? 12 : 0),
-                  child: _buildAccountInfoItem(context, item['label']!, item['value']!),
-                )).toList(),
+                children: items
+                    .map((item) => Padding(
+                          padding: EdgeInsets.only(
+                              bottom: item != items.last ? 12 : 0),
+                          child: _buildAccountInfoItem(
+                              context, item['label']!, item['value']!),
+                        ))
+                    .toList(),
               );
             }),
           ],
@@ -259,7 +283,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildAccountInfoItem(BuildContext context, String label, String value) {
+  Widget _buildAccountInfoItem(
+      BuildContext context, String label, String value) {
     final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(16),
@@ -278,7 +303,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 color: theme.colorScheme.onSurface.withOpacity(0.6),
               )),
           const SizedBox(height: 8),
-          Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(value,
+              style:
+                  const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         ],
       ),
     );
@@ -299,13 +326,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
               spacing: 12,
               runSpacing: 8,
               children: [
-                Icon(LucideIcons.user, size: 28, color: theme.colorScheme.primary),
+                Icon(LucideIcons.user,
+                    size: 28, color: theme.colorScheme.primary),
                 const Text(
                   'Configurações do Perfil',
                   style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                 ),
               ],
-            ).animate().fade(duration: 300.ms).slideX(begin: -0.1, end: 0, duration: 300.ms, curve: Curves.easeOut),
+            ).animate().fade(duration: 300.ms).slideX(
+                begin: -0.1, end: 0, duration: 300.ms, curve: Curves.easeOut),
             const SizedBox(height: 24),
 
             LayoutBuilder(builder: (context, constraints) {
@@ -334,7 +363,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _buildAccountInfoCard(context)
                 .animate()
                 .fade(duration: 400.ms, delay: 300.ms)
-                .slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut),
+                .slideY(
+                    begin: 0.1,
+                    end: 0,
+                    duration: 400.ms,
+                    curve: Curves.easeOut),
 
             const SizedBox(height: 24),
 
@@ -355,9 +388,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                 ),
-              ).animate()
-               .fade(duration: 400.ms, delay: 400.ms)
-               .slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut),
+              ).animate().fade(duration: 400.ms, delay: 400.ms).slideY(
+                  begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut),
 
             const SizedBox(height: 24),
           ],
@@ -378,7 +410,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildSectionTitle(context, LucideIcons.user, 'Informações Pessoais'),
+              _buildSectionTitle(
+                  context, LucideIcons.user, 'Informações Pessoais'),
               const SizedBox(height: 20),
 
               // Avatar
@@ -390,18 +423,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       CircleAvatar(
                         radius: 40,
-                        backgroundColor: theme.colorScheme.primary.withOpacity(0.15),
-                        backgroundImage: _avatarUrl != null 
+                        backgroundColor:
+                            theme.colorScheme.primary.withOpacity(0.15),
+                        backgroundImage: _avatarUrl != null
                             ? NetworkImage('${() {
-                                String url = dotenv.env['API_BASE_URL']?.replaceAll('/api', '') ?? 'http://localhost:8000';
+                                String url = dotenv.env['API_BASE_URL']
+                                        ?.replaceAll('/api', '') ??
+                                    'http://localhost:8000';
                                 if (!kIsWeb && Platform.isAndroid) {
-                                  url = url.replaceAll('localhost', '10.0.2.2').replaceAll('127.0.0.1', '10.0.2.2');
+                                  url = url
+                                      .replaceAll('localhost', '10.0.2.2')
+                                      .replaceAll('127.0.0.1', '10.0.2.2');
                                 }
                                 return url;
-                              }()}$_avatarUrl') 
+                              }()}$_avatarUrl')
                             : null,
-                        child: _avatarUrl == null 
-                            ? Icon(LucideIcons.user, size: 40, color: theme.colorScheme.primary) 
+                        child: _avatarUrl == null
+                            ? Icon(LucideIcons.user,
+                                size: 40, color: theme.colorScheme.primary)
                             : null,
                       ),
                       Positioned(
@@ -410,7 +449,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: CircleAvatar(
                           radius: 14,
                           backgroundColor: theme.colorScheme.primary,
-                          child: Icon(LucideIcons.camera, size: 14, color: theme.colorScheme.onPrimary),
+                          child: Icon(LucideIcons.camera,
+                              size: 14, color: theme.colorScheme.onPrimary),
                         ),
                       ),
                     ],
@@ -426,9 +466,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(hintText: 'Digite seu nome completo'),
+                decoration:
+                    const InputDecoration(hintText: 'Digite seu nome completo'),
                 validator: (val) {
-                  if (val == null || val.trim().isEmpty) return 'Nome é obrigatório';
+                  if (val == null || val.trim().isEmpty)
+                    return 'Nome é obrigatório';
                   return null;
                 },
               ),
@@ -437,18 +479,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
               // Email
               Padding(
                 padding: const EdgeInsets.only(left: 4, bottom: 8),
-                child: Text('Endereço de Email', style: theme.textTheme.titleSmall),
+                child: Text('Endereço de Email',
+                    style: theme.textTheme.titleSmall),
               ),
               TextFormField(
                 initialValue: _email,
                 enabled: false,
-                decoration: const InputDecoration(hintText: 'email@exemplo.com'),
+                decoration:
+                    const InputDecoration(hintText: 'email@exemplo.com'),
               ),
               Padding(
                 padding: const EdgeInsets.only(left: 4, top: 4),
                 child: Text(
                   'O endereço de email não pode ser alterado',
-                  style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurface.withOpacity(0.5)),
+                  style: TextStyle(
+                      fontSize: 11,
+                      color: theme.colorScheme.onSurface.withOpacity(0.5)),
                 ),
               ),
               const SizedBox(height: 16),
@@ -480,8 +526,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   onPressed: _isLoading ? null : _saveProfile,
                   icon: _isLoading
                       ? const SizedBox(
-                          width: 16, height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
                         )
                       : const Icon(Icons.save_outlined, size: 18),
                   label: Text(_isLoading ? 'Salvando...' : 'Salvar Alterações'),
@@ -496,7 +544,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
       ),
-    ).animate().fade(duration: 400.ms, delay: 50.ms).slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut);
+    )
+        .animate()
+        .fade(duration: 400.ms, delay: 50.ms)
+        .slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut);
   }
 
   Widget _buildPreferencesCard(BuildContext context) {
@@ -517,15 +568,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _buildSectionTitle(context, LucideIcons.settings, 'Preferências'),
             const SizedBox(height: 20),
 
-            // Aparência 
+            // Aparência
             Row(
               children: [
                 Icon(
                   isDarkMode ? LucideIcons.moon : LucideIcons.sun,
-                  size: 16, color: theme.colorScheme.onSurface.withOpacity(0.7),
+                  size: 16,
+                  color: theme.colorScheme.onSurface.withOpacity(0.7),
                 ),
                 const SizedBox(width: 6),
-                Text('Aparência', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+                Text('Aparência',
+                    style: theme.textTheme.titleSmall
+                        ?.copyWith(fontWeight: FontWeight.w600)),
               ],
             ),
             const SizedBox(height: 10),
@@ -541,11 +595,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Modo Escuro', style: TextStyle(fontWeight: FontWeight.w600)),
+                        const Text('Modo Escuro',
+                            style: TextStyle(fontWeight: FontWeight.w600)),
                         const SizedBox(height: 2),
                         Text(
                           'Alternar entre temas claro e escuro',
-                          style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withOpacity(0.6)),
+                          style: TextStyle(
+                              fontSize: 12,
+                              color:
+                                  theme.colorScheme.onSurface.withOpacity(0.6)),
                         ),
                       ],
                     ),
@@ -557,15 +615,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       context.read<ThemeProvider>().toggleTheme(newMode);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(newMode ? 'Modo escuro ativado' : 'Modo claro ativado'),
+                          content: Text(newMode
+                              ? 'Modo escuro ativado'
+                              : 'Modo claro ativado'),
                           duration: const Duration(seconds: 1),
                         ),
                       );
                     },
-                    icon: Icon(isDarkMode ? LucideIcons.sun : LucideIcons.moon, size: 15),
+                    icon: Icon(isDarkMode ? LucideIcons.sun : LucideIcons.moon,
+                        size: 15),
                     label: Text(isDarkMode ? 'Claro' : 'Escuro'),
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
                     ),
                   ),
                 ],
@@ -575,19 +637,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Divider(color: theme.dividerColor),
             const SizedBox(height: 16),
 
-            // Notificações 
+            // Notificações
             Row(
               children: [
-                Icon(LucideIcons.bell, size: 16, color: theme.colorScheme.onSurface.withOpacity(0.7)),
+                Icon(LucideIcons.bell,
+                    size: 16,
+                    color: theme.colorScheme.onSurface.withOpacity(0.7)),
                 const SizedBox(width: 6),
-                Text('Notificações', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+                Text('Notificações',
+                    style: theme.textTheme.titleSmall
+                        ?.copyWith(fontWeight: FontWeight.w600)),
               ],
             ),
             const SizedBox(height: 10),
             _buildPreferenceRow(
               context: context,
               title: 'Notificações de Orçamento',
-              subtitle: 'Receba alertas ao exceder limites ou atingir metas financeiras',
+              subtitle:
+                  'Receba alertas ao exceder limites ou atingir metas financeiras',
               value: _notificationsEnabled,
               onChanged: (val) => setState(() => _notificationsEnabled = val),
             ),
@@ -595,19 +662,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Divider(color: theme.dividerColor),
             const SizedBox(height: 16),
 
-            // Privacidade 
+            // Privacidade
             Row(
               children: [
-                Icon(LucideIcons.shield, size: 16, color: theme.colorScheme.onSurface.withOpacity(0.7)),
+                Icon(LucideIcons.shield,
+                    size: 16,
+                    color: theme.colorScheme.onSurface.withOpacity(0.7)),
                 const SizedBox(width: 6),
-                Text('Privacidade', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+                Text('Privacidade',
+                    style: theme.textTheme.titleSmall
+                        ?.copyWith(fontWeight: FontWeight.w600)),
               ],
             ),
             const SizedBox(height: 10),
             _buildPreferenceRow(
               context: context,
               title: 'Compartilhar Dados Anônimos',
-              subtitle: 'Ajude a melhorar nossos serviços compartilhando dados de uso anônimos',
+              subtitle:
+                  'Ajude a melhorar nossos serviços compartilhando dados de uso anônimos',
               value: _shareDataEnabled,
               onChanged: (val) => setState(() => _shareDataEnabled = val),
             ),
@@ -628,6 +700,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
-    ).animate().fade(duration: 400.ms, delay: 150.ms).slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut);
+    )
+        .animate()
+        .fade(duration: 400.ms, delay: 150.ms)
+        .slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut);
   }
 }

@@ -67,8 +67,12 @@ class LayoutScreen extends StatelessWidget {
                   const Align(
                     alignment: Alignment.centerLeft,
                     child: Padding(
-                      padding: EdgeInsets.only(left: 32.0, top: 32.0, bottom: 24.0),
-                      child: Logo(size: 48, showText: true, mainAxisAlignment: MainAxisAlignment.start),
+                      padding:
+                          EdgeInsets.only(left: 32.0, top: 32.0, bottom: 24.0),
+                      child: Logo(
+                          size: 48,
+                          showText: true,
+                          mainAxisAlignment: MainAxisAlignment.start),
                     ),
                   ),
                   const Divider(),
@@ -79,20 +83,35 @@ class LayoutScreen extends StatelessWidget {
                         final dest = _destinations[index];
                         final isSelected = currentIndex == index;
                         return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16.0, vertical: 4.0),
                           child: ListTile(
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            selectedTileColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8)),
+                            selectedTileColor: Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withOpacity(0.1),
                             selected: isSelected,
                             leading: Icon(
                               dest.icon,
-                              color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: isSelected
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
                             ),
                             title: Text(
                               dest.label,
                               style: TextStyle(
-                                color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant,
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                color: isSelected
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
                               ),
                             ),
                             onTap: () => _onItemTapped(index, context),
@@ -105,9 +124,12 @@ class LayoutScreen extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: ListTile(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      leading: const Icon(LucideIcons.logOut, color: Colors.red),
-                      title: const Text('Sair', style: TextStyle(color: Colors.red)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                      leading:
+                          const Icon(LucideIcons.logOut, color: Colors.red),
+                      title: const Text('Sair',
+                          style: TextStyle(color: Colors.red)),
                       onTap: () {
                         context.read<FinanceProvider>().clear();
                         context.read<AuthProvider>().logout();

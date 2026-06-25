@@ -103,7 +103,8 @@ void main() {
         description: 'Mensal',
       );
 
-      final updated = transaction.copyWith(amount: 3200.00, title: 'Salário Novo');
+      final updated =
+          transaction.copyWith(amount: 3200.00, title: 'Salário Novo');
 
       expect(updated.id, 'tx-1');
       expect(updated.title, 'Salário Novo');
@@ -113,7 +114,8 @@ void main() {
   });
 
   group('Logo Widget Tests', () {
-    testWidgets('renders Planeja.AI text when showText is true', (WidgetTester tester) async {
+    testWidgets('renders Planeja.AI text when showText is true',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -125,7 +127,8 @@ void main() {
       expect(find.text('Planeja.AI'), findsOneWidget);
     });
 
-    testWidgets('does not render Planeja.AI text when showText is false', (WidgetTester tester) async {
+    testWidgets('does not render Planeja.AI text when showText is false',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(

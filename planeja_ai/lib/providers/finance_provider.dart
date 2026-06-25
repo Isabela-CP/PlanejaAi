@@ -30,7 +30,8 @@ class FinanceProvider extends ChangeNotifier {
   double _expenses = 0.0;
 
   List<dynamic>? get reportEvolucaoSaldo => _reportBalanceEvolution;
-  List<AppCategory> get transactionCategories => List.unmodifiable(_transactionCategories);
+  List<AppCategory> get transactionCategories =>
+      List.unmodifiable(_transactionCategories);
   List<AppCategory> get goalCategories => List.unmodifiable(_goalCategories);
   List<AppCategory> get categories => transactionCategories;
   List<Transaction> get transactions => List.unmodifiable(_transactions);
@@ -66,7 +67,9 @@ class FinanceProvider extends ChangeNotifier {
   }
 
   Future<void> fetchCategories({String type = 'transaction'}) async {
-    if (type == 'goal' ? _goalCategories.isEmpty : _transactionCategories.isEmpty) {
+    if (type == 'goal'
+        ? _goalCategories.isEmpty
+        : _transactionCategories.isEmpty) {
       _isLoadingCategories = true;
       notifyListeners();
     }
@@ -77,7 +80,7 @@ class FinanceProvider extends ChangeNotifier {
         final loaded = data
             .map((e) => AppCategory.fromJson(e as Map<String, dynamic>))
             .toList();
-        
+
         if (type == 'goal') {
           _goalCategories = loaded;
         } else {
@@ -105,7 +108,8 @@ class FinanceProvider extends ChangeNotifier {
       body: category.toJson(),
     );
     if (response.statusCode == 201) {
-      final newCat = AppCategory.fromJson(_apiService.decode(response) as Map<String, dynamic>);
+      final newCat = AppCategory.fromJson(
+          _apiService.decode(response) as Map<String, dynamic>);
       if (newCat.type == 'goal') {
         _goalCategories.add(newCat);
       } else {
@@ -114,7 +118,9 @@ class FinanceProvider extends ChangeNotifier {
       notifyListeners();
     } else {
       final data = _apiService.decode(response);
-      final msg = data is Map ? (data['error'] ?? 'Erro ao criar categoria') : 'Erro ao criar categoria';
+      final msg = data is Map
+          ? (data['error'] ?? 'Erro ao criar categoria')
+          : 'Erro ao criar categoria';
       throw Exception(msg);
     }
   }
@@ -125,8 +131,9 @@ class FinanceProvider extends ChangeNotifier {
       body: updated.toJson(),
     );
     if (response.statusCode == 200) {
-      final newCat = AppCategory.fromJson(_apiService.decode(response) as Map<String, dynamic>);
-      
+      final newCat = AppCategory.fromJson(
+          _apiService.decode(response) as Map<String, dynamic>);
+
       if (newCat.type == 'goal') {
         final idx = _goalCategories.indexWhere((c) => c.id == id);
         if (idx != -1) {
@@ -142,7 +149,9 @@ class FinanceProvider extends ChangeNotifier {
       }
     } else {
       final data = _apiService.decode(response);
-      final msg = data is Map ? (data['error'] ?? 'Erro ao atualizar categoria') : 'Erro ao atualizar categoria';
+      final msg = data is Map
+          ? (data['error'] ?? 'Erro ao atualizar categoria')
+          : 'Erro ao atualizar categoria';
       throw Exception(msg);
     }
   }
@@ -155,7 +164,9 @@ class FinanceProvider extends ChangeNotifier {
       notifyListeners();
     } else {
       final data = _apiService.decode(response);
-      final msg = data is Map ? (data['error'] ?? 'Erro ao remover categoria') : 'Erro ao remover categoria';
+      final msg = data is Map
+          ? (data['error'] ?? 'Erro ao remover categoria')
+          : 'Erro ao remover categoria';
       throw Exception(msg);
     }
   }
@@ -172,7 +183,7 @@ class FinanceProvider extends ChangeNotifier {
         _transactions = data
             .map((e) => Transaction.fromJson(e as Map<String, dynamic>))
             .toList();
-        
+
         _recalculateBalances();
       }
     } catch (e) {
@@ -204,7 +215,8 @@ class FinanceProvider extends ChangeNotifier {
       body: tx.toJson(),
     );
     if (response.statusCode == 201) {
-      final newTx = Transaction.fromJson(_apiService.decode(response) as Map<String, dynamic>);
+      final newTx = Transaction.fromJson(
+          _apiService.decode(response) as Map<String, dynamic>);
       _transactions.insert(0, newTx);
       _recalculateBalances();
       notifyListeners();
@@ -212,7 +224,9 @@ class FinanceProvider extends ChangeNotifier {
       fetchReportsData();
     } else {
       final data = _apiService.decode(response);
-      final msg = data is Map ? (data['error'] ?? 'Erro ao criar transação') : 'Erro ao criar transação';
+      final msg = data is Map
+          ? (data['error'] ?? 'Erro ao criar transação')
+          : 'Erro ao criar transação';
       throw Exception(msg);
     }
   }
@@ -223,7 +237,8 @@ class FinanceProvider extends ChangeNotifier {
       body: tx.toJson(),
     );
     if (response.statusCode == 200) {
-      final updatedTx = Transaction.fromJson(json.decode(response.body) as Map<String, dynamic>);
+      final updatedTx = Transaction.fromJson(
+          json.decode(response.body) as Map<String, dynamic>);
       final idx = _transactions.indexWhere((t) => t.id == id);
       if (idx != -1) {
         _transactions[idx] = updatedTx;
@@ -234,7 +249,9 @@ class FinanceProvider extends ChangeNotifier {
       }
     } else {
       final data = json.decode(response.body);
-      final msg = data is Map ? (data['error'] ?? 'Erro ao atualizar transação') : 'Erro ao atualizar transação';
+      final msg = data is Map
+          ? (data['error'] ?? 'Erro ao atualizar transação')
+          : 'Erro ao atualizar transação';
       throw Exception(msg);
     }
   }
@@ -249,7 +266,9 @@ class FinanceProvider extends ChangeNotifier {
       fetchReportsData();
     } else {
       final data = _apiService.decode(response);
-      final msg = data is Map ? (data['error'] ?? 'Erro ao remover transação') : 'Erro ao remover transação';
+      final msg = data is Map
+          ? (data['error'] ?? 'Erro ao remover transação')
+          : 'Erro ao remover transação';
       throw Exception(msg);
     }
   }
@@ -261,7 +280,8 @@ class FinanceProvider extends ChangeNotifier {
     }
     try {
       final queryDate = date ?? DateTime.now();
-      final dateStr = "${queryDate.year.toString().padLeft(4, '0')}-${queryDate.month.toString().padLeft(2, '0')}-01";
+      final dateStr =
+          "${queryDate.year.toString().padLeft(4, '0')}-${queryDate.month.toString().padLeft(2, '0')}-01";
       final response = await _apiService.get('/budgets?date=$dateStr');
       if (response.statusCode == 200) {
         final List<dynamic> data = _apiService.decode(response) as List;
@@ -284,7 +304,8 @@ class FinanceProvider extends ChangeNotifier {
     DateTime? date,
   }) async {
     final queryDate = date ?? DateTime.now();
-    final dateStr = "${queryDate.year.toString().padLeft(4, '0')}-${queryDate.month.toString().padLeft(2, '0')}-01";
+    final dateStr =
+        "${queryDate.year.toString().padLeft(4, '0')}-${queryDate.month.toString().padLeft(2, '0')}-01";
     final response = await _apiService.post(
       '/budgets',
       body: {
@@ -295,12 +316,15 @@ class FinanceProvider extends ChangeNotifier {
       },
     );
     if (response.statusCode == 201) {
-      final newBudget = Budget.fromJson(_apiService.decode(response) as Map<String, dynamic>);
+      final newBudget =
+          Budget.fromJson(_apiService.decode(response) as Map<String, dynamic>);
       _budgets.add(newBudget);
       notifyListeners();
     } else {
       final data = _apiService.decode(response);
-      final msg = data is Map ? (data['error'] ?? 'Erro ao criar orçamento') : 'Erro ao criar orçamento';
+      final msg = data is Map
+          ? (data['error'] ?? 'Erro ao criar orçamento')
+          : 'Erro ao criar orçamento';
       throw Exception(msg);
     }
   }
@@ -319,7 +343,8 @@ class FinanceProvider extends ChangeNotifier {
       body: body,
     );
     if (response.statusCode == 200) {
-      final updatedBudget = Budget.fromJson(_apiService.decode(response) as Map<String, dynamic>);
+      final updatedBudget =
+          Budget.fromJson(_apiService.decode(response) as Map<String, dynamic>);
       final idx = _budgets.indexWhere((b) => b.id == id);
       if (idx != -1) {
         _budgets[idx] = updatedBudget;
@@ -327,7 +352,9 @@ class FinanceProvider extends ChangeNotifier {
       }
     } else {
       final data = _apiService.decode(response);
-      final msg = data is Map ? (data['error'] ?? 'Erro ao atualizar orçamento') : 'Erro ao atualizar orçamento';
+      final msg = data is Map
+          ? (data['error'] ?? 'Erro ao atualizar orçamento')
+          : 'Erro ao atualizar orçamento';
       throw Exception(msg);
     }
   }
@@ -339,7 +366,9 @@ class FinanceProvider extends ChangeNotifier {
       notifyListeners();
     } else {
       final data = _apiService.decode(response);
-      final msg = data is Map ? (data['error'] ?? 'Erro ao remover orçamento') : 'Erro ao remover orçamento';
+      final msg = data is Map
+          ? (data['error'] ?? 'Erro ao remover orçamento')
+          : 'Erro ao remover orçamento';
       throw Exception(msg);
     }
   }
@@ -353,9 +382,8 @@ class FinanceProvider extends ChangeNotifier {
       final response = await _apiService.get('/goals');
       if (response.statusCode == 200) {
         final List<dynamic> data = _apiService.decode(response) as List;
-        _goals = data
-            .map((e) => Goal.fromJson(e as Map<String, dynamic>))
-            .toList();
+        _goals =
+            data.map((e) => Goal.fromJson(e as Map<String, dynamic>)).toList();
         _recalculateBalances();
       }
     } catch (e) {
@@ -372,13 +400,16 @@ class FinanceProvider extends ChangeNotifier {
       body: goal.toJson(),
     );
     if (response.statusCode == 201) {
-      final newGoal = Goal.fromJson(_apiService.decode(response) as Map<String, dynamic>);
+      final newGoal =
+          Goal.fromJson(_apiService.decode(response) as Map<String, dynamic>);
       _goals.add(newGoal);
       _recalculateBalances();
       notifyListeners();
     } else {
       final data = _apiService.decode(response);
-      final msg = data is Map ? (data['error'] ?? 'Erro ao criar meta') : 'Erro ao criar meta';
+      final msg = data is Map
+          ? (data['error'] ?? 'Erro ao criar meta')
+          : 'Erro ao criar meta';
       throw Exception(msg);
     }
   }
@@ -396,7 +427,8 @@ class FinanceProvider extends ChangeNotifier {
       if (name != null) 'name': name,
       if (amount != null) 'targetValue': amount,
       if (currentValue != null) 'currentValue': currentValue,
-      if (deadline != null) 'deadline': deadline.toIso8601String().split('T')[0],
+      if (deadline != null)
+        'deadline': deadline.toIso8601String().split('T')[0],
       if (categoryId != null) 'categoryId': categoryId,
       if (customCategory != null) 'customCategory': customCategory,
     };
@@ -405,7 +437,8 @@ class FinanceProvider extends ChangeNotifier {
       body: body,
     );
     if (response.statusCode == 200) {
-      final updatedGoal = Goal.fromJson(_apiService.decode(response) as Map<String, dynamic>);
+      final updatedGoal =
+          Goal.fromJson(_apiService.decode(response) as Map<String, dynamic>);
       final idx = _goals.indexWhere((g) => g.id == id);
       if (idx != -1) {
         _goals[idx] = updatedGoal;
@@ -414,7 +447,9 @@ class FinanceProvider extends ChangeNotifier {
       }
     } else {
       final data = _apiService.decode(response);
-      final msg = data is Map ? (data['error'] ?? 'Erro ao atualizar meta') : 'Erro ao atualizar meta';
+      final msg = data is Map
+          ? (data['error'] ?? 'Erro ao atualizar meta')
+          : 'Erro ao atualizar meta';
       throw Exception(msg);
     }
   }
@@ -427,12 +462,15 @@ class FinanceProvider extends ChangeNotifier {
       notifyListeners();
     } else {
       final data = _apiService.decode(response);
-      final msg = data is Map ? (data['error'] ?? 'Erro ao remover meta') : 'Erro ao remover meta';
+      final msg = data is Map
+          ? (data['error'] ?? 'Erro ao remover meta')
+          : 'Erro ao remover meta';
       throw Exception(msg);
     }
   }
 
-  Future<void> fetchReportsData({DateTime? startDate, DateTime? endDate}) async {
+  Future<void> fetchReportsData(
+      {DateTime? startDate, DateTime? endDate}) async {
     if (_reportSummary == null) {
       _isLoadingReports = true;
       notifyListeners();
