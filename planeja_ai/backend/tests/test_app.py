@@ -16,4 +16,3 @@ def test_create_app_missing_database_url(monkeypatch):
         create_app()
 
     assert "DATABASE_URL environment variable is not set" in str(excinfo.value)
-
